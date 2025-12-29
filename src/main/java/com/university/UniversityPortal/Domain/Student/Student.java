@@ -29,6 +29,7 @@ public class Student {
     private LocalDate dateOfBirth;
     private String status;      //Active, Inactive, Graduated, etc.
 
+    /*
     //JPA cannot persist lists directly, need a join table for many-to-many relationship
     //For registration purposes, the model is Student <--> Enrollment <--> CourseOffering
     @ManyToMany
@@ -37,6 +38,8 @@ public class Student {
         joinColumns = @JoinColumn(name = "student_id"),
         inverseJoinColumns = @JoinColumn(name = "course_id")
     )
+
+     */
 
     private String email;
     private String phoneNumber;

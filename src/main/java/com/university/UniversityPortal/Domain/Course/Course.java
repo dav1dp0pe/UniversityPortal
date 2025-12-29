@@ -25,6 +25,12 @@ public class Course {
     private String term;  //Fall, Spring, Summer
     private int creditHours;
 
+
+
+    //one course can have many enrollments
+   /* @OneToMany(mappedBy = "course")
+    private List<Enrollment> enrollments; */
+
     // Add a field for prerequisites
     @ManyToMany
     @JoinTable(
@@ -32,11 +38,5 @@ public class Course {
             joinColumns = @JoinColumn(name = "course_id"),
             inverseJoinColumns = @JoinColumn(name = "prerequisite_id")
     )
-
-    //one course can have many enrollments
-    @OneToMany(mappedBy = "course")
-    private List<Enrollment> enrollments;
-
-
     private List<Course> prerequisites;
 }

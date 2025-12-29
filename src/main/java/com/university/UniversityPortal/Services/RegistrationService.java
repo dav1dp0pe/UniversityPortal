@@ -14,9 +14,15 @@ public class RegistrationService {
 
     //service to register for classes
     //add checks for unique student IDs, valid course capacity, and prerequisites
-    public void registerForClass(Long studentId, Long classId, String term) {
+    public void registerForClass (Long studentId, Long classId) {
         // Implementation for registering a student for a class
         //enforce seat capacity, already enrolled, prerequisites, credit limit
+        //verify student exists + active
+        //verify class exists
+        //prevent duplicate registrations
+        //save enrollment record
+        //all inside @Transactional
+
 
     }
 
