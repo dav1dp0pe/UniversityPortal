@@ -1,6 +1,6 @@
 package com.university.UniversityPortal.Repository;
 
-import com.university.UniversityPortal.Course.Course;
+import com.university.UniversityPortal.Domain.Course.Course;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
