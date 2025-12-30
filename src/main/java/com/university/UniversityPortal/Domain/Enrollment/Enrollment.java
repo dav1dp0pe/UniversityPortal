@@ -28,7 +28,7 @@ public class Enrollment {
 
     //many enrollments can belong to one course
     @ManyToOne
-    @JoinColumn(name = "offering_id")
+    @JoinColumn(name = "offering_id", nullable = false)
     private CourseOffering courseOffering;
 
     //private String term;  //Fall 2025, Spring 2026, Summer

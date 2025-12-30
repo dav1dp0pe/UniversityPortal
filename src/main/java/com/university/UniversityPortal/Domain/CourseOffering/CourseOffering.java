@@ -23,7 +23,7 @@ public class CourseOffering {
     private Course course;
 
     @Column(nullable = false)
-    private String term;
+    private String term;        //Spring 2026, Fall 2025, Summer 2026
 
     @Column(nullable = false)
     private short section;      // e.g., 1, 2, 3 for different sections of the same course in a term

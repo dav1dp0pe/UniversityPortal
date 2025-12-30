@@ -19,10 +19,10 @@ public class Course {
 
     private String courseName;
     private String courseCode;
-    private int seatCapacity;
-    private int section;
-    private short sectionNumber;
-    private String term;  //Fall, Spring, Summer
+    //private int seatCapacity;
+    //private int section;
+    //private short sectionNumber;
+    //private String term;  //Fall, Spring, Summer
     private int creditHours;
 
 
@@ -40,3 +40,7 @@ public class Course {
     )
     private List<Course> prerequisites;
 }
+
+//TODO: Decide how a course becomes "Completed" - Is it through Enrollment status or CourseOffering?
+//TODO: Add simple controller endpoints for CRUD operations on Course entity (ex: POST /students/{studentId}/offerings/{offeringId}/register) to add a course for a student)
+//TODO: Add test cases to register when seats exist, waitlists when full, blocks when prerequisites not met
