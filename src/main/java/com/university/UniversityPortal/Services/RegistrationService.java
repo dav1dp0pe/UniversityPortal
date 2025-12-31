@@ -42,12 +42,12 @@ public class RegistrationService {
                 .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
 
         //3. check if already enrolled
-        if(enrollmentRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
+        if(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId)) {
             throw new RuntimeException("student " + studentId + " is already enrolled in offering " + offeringId);
         }
 
         //4. check seat capacity
-        long enrolledCount = enrollmentRepository.countByOfferingId(offeringId);
+        long enrolledCount = enrollmentRepository.countActiveByOfferingId(offeringId);
         boolean hasSeats = enrolledCount < offering.getSeatCapacity();
 
         //TODO prerequisites looks sus
