@@ -21,7 +21,7 @@ public class RegistrationController {
     private final EnrollmentRepository enrollmentRepository;
     private final RegistrationService registrationService;
 
-
+/*
     //get mapping for registration page
     @GetMapping("/students/{studentId}/enrollments")
     public String getRegistrationPage() {
@@ -29,7 +29,7 @@ public class RegistrationController {
         //model.addAttribute("enrollments", enrollments);
         return "registration";
     }
-
+*/
     //post mapping for registering for classes
     //@PostMapping("/students/{studentId}/enrollments")
     @PostMapping

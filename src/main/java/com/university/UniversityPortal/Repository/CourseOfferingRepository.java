@@ -13,7 +13,8 @@ import java.util.Optional;
 public interface CourseOfferingRepository extends JpaRepository<CourseOffering, Long> {
 
     // Pessimistic lock to prevent concurrent modifications
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    //TODO: enable lock after testing/ when switching to Postgres/Testcontainers and add a concurrency test
+    //@Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT o FROM CourseOffering o WHERE o.offeringId = :id")   //select by id for update
     Optional<CourseOffering> findByIdForUpdate(@Param("id") Long id);
 }

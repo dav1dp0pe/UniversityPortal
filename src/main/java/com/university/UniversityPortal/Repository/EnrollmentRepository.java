@@ -4,11 +4,10 @@ import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
+
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     boolean existsByStudent_StudentIdAndCourseOffering_OfferingId(Long studentId, Long offeringId);
 
@@ -27,7 +26,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             SELECT count(e)
             FROM Enrollment e
             WHERE e.student.studentId = :studentId
-            AND e.enrollmentStatus = COMPLETED
+            AND e.enrollmentStatus = 'COMPLETED'
             AND e.courseOffering.course.courseId IN :courseIds
             """)
     long countCompletedCourses(@Param("studentId") Long studentId, @Param("courseIds") List<Long> courseIds);
