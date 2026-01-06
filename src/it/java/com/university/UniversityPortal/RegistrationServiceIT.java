@@ -192,4 +192,135 @@ public class RegistrationServiceIT {
         )).isFalse();
     }
 
+    @Test
+    void dropClass_whenNotRegistered_throwsException() {
+        Student s = new Student();
+        s.setFirstName("Tom");
+        s.setLastName("Hanks");
+        s.setDateOfBirth(LocalDate.of(2000, 12, 25));
+        s.setStatus("ACTIVE");
+        s = studentRepository.save(s);
+
+        Course c = new Course();
+        c.setCourseName("History 101");
+        c.setCourseCode("HIST-101");
+        c.setCreditHours(3);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Fall 2025");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(1);
+        offering = courseOfferingRepository.save(offering);
+
+        long studentId = s.getStudentId();
+        long offeringId = offering.getOfferingId();
+        long beforeEnrollments = enrollmentRepository.count();
+
+        assertThatThrownBy(() ->
+                registrationService.dropClass(studentId, offeringId)
+        ).isInstanceOf(RuntimeException.class);
+
+        assertThat(enrollmentRepository.count()).isEqualTo(beforeEnrollments);
+    }
+
+    //TODO, what if someone is behind the waitlisted person? They should be promoted up
+    @Test
+    void dropClass_whenWaitlisted_setsDropped_doesNotPromoteAnyone() {
+        Course c = new Course();
+        c.setCourseName("Physics 101");
+        c.setCourseCode("PHYS-101");
+        c.setCreditHours(4);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Spring 2026");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(1);
+        offering = courseOfferingRepository.save(offering);
+
+        //Student A - will be enrolled
+        Student studentA = new Student();
+        studentA.setFirstName("Student");
+        studentA.setLastName("A");
+        studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
+        studentA.setStatus("ACTIVE");
+        studentA = studentRepository.save(studentA);
+
+        //Student B - will be waitlisted
+        Student studentB = new Student();
+        studentB.setFirstName("Student");
+        studentB.setLastName("B");
+        studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
+        studentB.setStatus("ACTIVE");
+        studentB = studentRepository.save(studentB);
+
+        long offeringId = offering.getOfferingId();
+
+        Enrollment e1 = registrationService.registerForClass(studentA.getStudentId(), offeringId);
+        Enrollment e2 = registrationService.registerForClass(studentB.getStudentId(), offeringId);
+
+        assertThat(e1.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+        assertThat(e2.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+
+        //drop waitlisted student B
+        Enrollment dropped = registrationService.dropClass(studentB.getStudentId(), offeringId);
+
+        assertThat(dropped.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.DROPPED);
+
+        //enrolled student A should remain enrolled
+        Enrollment checkA = enrollmentRepository.findById(e1.getId()).orElseThrow();
+        assertThat(checkA.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+    }
+
+    @Test
+    void dropClass_whenEnrolled_promoteNextWaitlistedStudent(){
+        Course c = new Course();
+        c.setCourseName("Chemistry 101");
+        c.setCourseCode("CHEM-101");
+        c.setCreditHours(4);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Spring 2026");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(1);
+        offering = courseOfferingRepository.save(offering);
+
+        //Student A - will be enrolled
+        Student studentA = new Student();
+        studentA.setFirstName("Student");
+        studentA.setLastName("A");
+        studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
+        studentA.setStatus("ACTIVE");
+        studentA = studentRepository.save(studentA);
+
+        //Student B - will be waitlisted
+        Student studentB = new Student();
+        studentB.setFirstName("Student");
+        studentB.setLastName("B");
+        studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
+        studentB.setStatus("ACTIVE");
+        studentB = studentRepository.save(studentB);
+
+        long offeringId = offering.getOfferingId();
+
+        Enrollment enrolled = registrationService.registerForClass(studentA.getStudentId(), offeringId);
+        Enrollment waitlisted = registrationService.registerForClass(studentB.getStudentId(), offeringId);
+
+        assertThat(enrolled.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+        assertThat(waitlisted.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+
+        //drop enrolled student A
+        Enrollment dropped = registrationService.dropClass(studentA.getStudentId(), offeringId);
+
+        assertThat(dropped.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.DROPPED);
+
+        //waitlisted student B should be promoted to enrolled
+        Enrollment checkB = enrollmentRepository.findById(waitlisted.getId()).orElseThrow();
+        assertThat(checkB.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+    }
 }

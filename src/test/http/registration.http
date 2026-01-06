@@ -1,0 +1,18 @@
+### Registration API Test Requests
+POST http://localhost:8080/api/registration/register
+Content-Type: application/json
+
+{
+  "studentId": 1,
+  "offeringId": 1
+}
+
+### TODO: Test this endpoint
+### Drop a course
+POST http://localhost:8080/api/registration/drop
+Content-Type: application/json
+
+{
+  "studentId": 1,
+  "offeringId": 1
+}

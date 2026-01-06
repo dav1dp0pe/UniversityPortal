@@ -10,6 +10,7 @@ import com.university.UniversityPortal.Repository.StudentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 //TODO: add @transactional where needed
@@ -80,5 +81,41 @@ public class RegistrationService {
         return enrollmentRepository.save(e);
     }
 
+    //TODO: Map invalid dropped class to 400 or 409 error with an exception handler
+    @Transactional
+    public Enrollment dropClass(Long studentId, Long offeringId) {
+
+        //find enrollment or waitlist record
+        Enrollment enrollment = enrollmentRepository.findByStudent_StudentIdAndCourseOffering_OfferingIdAndEnrollmentStatusIn(
+                studentId,
+                offeringId,
+                List.of(Enrollment.EnrollmentStatus.ENROLLED, Enrollment.EnrollmentStatus.WAITLISTED)
+        ).orElseThrow(() -> new RuntimeException("enrollment/waitlist is not found for student " + studentId + " in offering " + offeringId));
+
+        //store old status
+        Enrollment.EnrollmentStatus oldStatus = enrollment.getEnrollmentStatus();
+
+        //update enrollment to dropped
+        enrollment.setEnrollmentStatus(Enrollment.EnrollmentStatus.DROPPED);
+        enrollment.setDroppedAt(LocalDateTime.now());
+        enrollment.setLastUpdated(LocalDateTime.now());
+        enrollment.setWaitlistPosition(null);
+
+        enrollmentRepository.save(enrollment);
+
+        //Only open up a spot if the student was enrolled, not waitlisted
+        if(oldStatus == Enrollment.EnrollmentStatus.ENROLLED) {
+            //promote next waitlisted student, if any
+            enrollmentRepository.findFirstByCourseOffering_OfferingIdAndEnrollmentStatusOrderByWaitlistPositionAsc(offeringId, Enrollment.EnrollmentStatus.WAITLISTED)
+                    .ifPresent(nextInLine -> {
+                        nextInLine.setEnrollmentStatus(Enrollment.EnrollmentStatus.ENROLLED);
+                        nextInLine.setWaitlistPosition(null);
+                        nextInLine.setLastUpdated(LocalDateTime.now());
+                        enrollmentRepository.save(nextInLine);
+                    });
+        }
+
+        return enrollment;
+    }
 
 }
