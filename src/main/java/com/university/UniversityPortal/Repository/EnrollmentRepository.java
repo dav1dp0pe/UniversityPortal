@@ -38,9 +38,13 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     Optional<Enrollment> findFirstByCourseOffering_OfferingIdAndEnrollmentStatusOrderByWaitlistPositionAsc(Long offeringId, Enrollment.EnrollmentStatus status);
 
+    List<Enrollment> findByCourseOffering_OfferingIdAndEnrollmentStatusAndWaitlistPositionGreaterThanOrderByWaitlistPositionAsc(Long offeringId, Enrollment.EnrollmentStatus status, Integer waitlistPosition);
+
     Long student(Student student);
 
     //TODO: Add method to count only waitlisted students for a course offering
 
     //TODO: keep enrolled seat check based on enrolled count only
+
+    //TODO: add method to decrement waitlist positions after a drop
 }

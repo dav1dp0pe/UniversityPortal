@@ -4,10 +4,9 @@ import com.university.UniversityPortal.Domain.Course.Course;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
-import com.university.UniversityPortal.Repository.CourseOfferingRepository;
-import com.university.UniversityPortal.Repository.CourseRepository;
-import com.university.UniversityPortal.Repository.EnrollmentRepository;
-import com.university.UniversityPortal.Repository.StudentRepository;
+import com.university.UniversityPortal.Domain.StudentHold.HoldType;
+import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
+import com.university.UniversityPortal.Repository.*;
 import com.university.UniversityPortal.Services.RegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 //import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -63,6 +63,8 @@ public class RegistrationServiceIT {
     CourseOfferingRepository courseOfferingRepository;
     @Autowired
     EnrollmentRepository enrollmentRepository;
+    @Autowired
+    StudentHoldRepository studentHoldRepository;
 
     //
     @Test
@@ -322,5 +324,117 @@ public class RegistrationServiceIT {
         //waitlisted student B should be promoted to enrolled
         Enrollment checkB = enrollmentRepository.findById(waitlisted.getId()).orElseThrow();
         assertThat(checkB.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+    }
+
+    @Test
+    void dropClass_whenWaitlisted_promoteNextWaitlistedStudent(){
+        Course c = new Course();
+        c.setCourseName("Biology 101");
+        c.setCourseCode("BIO-101");
+        c.setCreditHours(4);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Spring 2026");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(1);
+        offering = courseOfferingRepository.save(offering);
+
+        //Student A - will be enrolled
+        Student studentA = new Student();
+        studentA.setFirstName("Student");
+        studentA.setLastName("A");
+        studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
+        studentA.setStatus("ACTIVE");
+        studentA = studentRepository.save(studentA);
+
+        //Student B - will be waitlisted
+        Student studentB = new Student();
+        studentB.setFirstName("Student");
+        studentB.setLastName("B");
+        studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
+        studentB.setStatus("ACTIVE");
+        studentB = studentRepository.save(studentB);
+
+        //Student C - will be waitlisted second
+        Student studentC = new Student();
+        studentC.setFirstName("Student");
+        studentC.setLastName("C");
+        studentC.setDateOfBirth(LocalDate.of(2003, 3, 3));
+        studentC.setStatus("ACTIVE");
+        studentC = studentRepository.save(studentC);
+
+        long offeringId = offering.getOfferingId();
+
+        Enrollment enrolled = registrationService.registerForClass(studentA.getStudentId(), offeringId);
+        Enrollment waitlisted1 = registrationService.registerForClass(studentB.getStudentId(), offeringId);
+        Enrollment waitlisted2 = registrationService.registerForClass(studentC.getStudentId(), offeringId);
+
+        //verify initial statuses
+        Enrollment checkCBeforeDropC = enrollmentRepository.findById(waitlisted2.getId()).orElseThrow();
+
+        //assert that initial statuses are correct
+        assertThat(enrolled.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+        assertThat(waitlisted1.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+        assertThat(waitlisted2.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+        assertThat(checkCBeforeDropC.getWaitlistPosition()).isEqualTo(2);
+
+
+        //drop waitlisted student B
+        Enrollment dropped = registrationService.dropClass(studentB.getStudentId(), offeringId);
+        assertThat(dropped.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.DROPPED);
+
+        //student c should be promoted in waitlist position
+        Enrollment checkAfterDropC = enrollmentRepository.findById(waitlisted2.getId()).orElseThrow();
+        assertThat(checkAfterDropC.getEnrollmentStatus()).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+        assertThat(checkAfterDropC.getWaitlistPosition()).isEqualTo(1);
+    }
+
+    @Test
+    void registerClass_advisingHold_throwsException() {
+        Student s = new Student();
+        s.setFirstName("Hold");
+        s.setLastName("Student");
+        s.setDateOfBirth(LocalDate.of(2000, 6, 15));
+        s.setStatus("ACTIVE");
+
+        s = studentRepository.save(s);
+
+        //put an advising hold on the student
+        StudentHold hold = new StudentHold();
+        hold.setStudent(s);
+        hold.setHoldType(HoldType.ADVISING);
+        hold.setReason("Advising hold prevents registration until advisor approval.");
+        hold.setActive(true);
+        hold.setPlacedAt(LocalDateTime.now());
+        studentHoldRepository.save(hold);
+
+        Course c = new Course();
+        c.setCourseName("Philosophy 101");
+        c.setCourseCode("PHIL-101");
+        c.setCreditHours(3);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Fall 2025");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(30);
+        offering = courseOfferingRepository.save(offering);
+
+        long studentId = s.getStudentId();
+        long offeringId = offering.getOfferingId();
+        long beforeEnrollments = enrollmentRepository.count();
+
+        assertThatThrownBy(() ->
+                registrationService.registerForClass(studentId, offeringId)
+        ).isInstanceOf(RuntimeException.class)
+         .hasMessageContaining("Student has an active hold and cannot register.");
+
+        assertThat(enrollmentRepository.count()).isEqualTo(beforeEnrollments);
+        assertThat(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
+                studentId, offeringId
+        )).isFalse();
     }
 }

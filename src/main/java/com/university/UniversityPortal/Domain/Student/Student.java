@@ -1,10 +1,9 @@
 package com.university.UniversityPortal.Domain.Student;
 
-
-import com.university.UniversityPortal.Domain.Course.Course;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Program.Major;
 import com.university.UniversityPortal.Domain.Program.Minor;
+import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -52,6 +51,10 @@ public class Student {
     @OneToMany(mappedBy = "student")
     private List<Enrollment> enrollments;
 
+    //one student can have many holds
+    @OneToMany(mappedBy = "student")
+    private List<StudentHold> holds;
+
     //relationship mapping to Major entity
     //TODO: What if student is a double major? What if student is a double minor?
     @ManyToOne
@@ -61,5 +64,7 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "minor_id")
     private Minor minor;
+
+
 
 }
