@@ -1,13 +1,12 @@
 package com.university.UniversityPortal.Services;
 
+import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
 import com.university.UniversityPortal.Domain.Course.Course;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
-import com.university.UniversityPortal.Repository.CourseOfferingRepository;
-import com.university.UniversityPortal.Repository.EnrollmentRepository;
-import com.university.UniversityPortal.Repository.StudentHoldRepository;
-import com.university.UniversityPortal.Repository.StudentRepository;
+import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
+import com.university.UniversityPortal.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,19 +21,72 @@ public class RegistrationService {
     private final StudentRepository studentRepository;
     private final CourseOfferingRepository courseOfferingRepository;
     private final StudentHoldRepository studentHoldRepository;
+    private final WishlistRepository wishlistRepository;
 
     //constructor
     public RegistrationService(EnrollmentRepository enrollmentRepository,
                                StudentRepository studentRepository,
-                               CourseOfferingRepository courseOfferingRepository, StudentHoldRepository studentHoldRepository) {
+                               CourseOfferingRepository courseOfferingRepository, StudentHoldRepository studentHoldRepository, WishlistRepository wishlistRepository) {
         this.enrollmentRepository = enrollmentRepository;
         this.studentRepository = studentRepository;
         this.courseOfferingRepository = courseOfferingRepository;
         this.studentHoldRepository = studentHoldRepository;
+        this.wishlistRepository = wishlistRepository;
+    }
+
+    @Transactional
+    public Wishlist addToWishlist(Long studentId, long offeringId) {
+        //1. load student
+        Student student = studentRepository.findById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
+
+        //2. load offering
+        CourseOffering offering = courseOfferingRepository.findById(offeringId)
+                .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
+
+        //3. check if already in wishlist
+        if(wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId).isPresent()) {
+            throw new RuntimeException("student " + studentId + " already has offering " + offeringId + " in wishlist");
+        }
+
+        //4. create wishlist record
+        Wishlist item = new Wishlist();
+        item.setStudent(student);
+        item.setCourseOffering(offering);
+        item.setAddedAt(LocalDateTime.now());
+
+        return wishlistRepository.save(item);
+    }
+
+    @Transactional
+    public void removeFromWishlist(Long studentId, long offeringId) {
+        //find wishlist record
+        Wishlist item = wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId)
+                .orElseThrow(() -> new RuntimeException("wishlist item not found for student " + studentId + " and offering " + offeringId));
+
+        wishlistRepository.delete(item);
+    }
+
+    @Transactional
+    public List<BatchRegistrationResult> registerAllFromWishlist(Long studentId, String term) {
+
+        List<Wishlist> wishlistItems = wishlistRepository.findByStudent_StudentIdAndCourseOffering_Term(studentId, term);
+        List<BatchRegistrationResult> results = new java.util.ArrayList<>();
+
+        for (Wishlist item : wishlistItems) {
+            Long offeringId = item.getCourseOffering().getOfferingId();
+            try {
+                Enrollment enrollment = registerForClass(studentId, offeringId);
+                results.add(new BatchRegistrationResult(offeringId, true, "Registered successfully as " + enrollment.getEnrollmentStatus()));
+            } catch (RuntimeException e) {
+                results.add(new BatchRegistrationResult(offeringId, false, e.getMessage()));
+            }
+        }
+
+        return results;
     }
 
     //service to register for classes
-    //add checks for unique student IDs, valid course capacity, and prerequisites
+    //TODO: add checks for unique student IDs, valid course capacity, and prerequisites
     @Transactional
     public Enrollment registerForClass (Long studentId, Long offeringId) {
 

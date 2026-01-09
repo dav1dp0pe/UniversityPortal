@@ -4,6 +4,7 @@ import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Program.Major;
 import com.university.UniversityPortal.Domain.Program.Minor;
 import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
+import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -55,6 +56,11 @@ public class Student {
     @OneToMany(mappedBy = "student")
     private List<StudentHold> holds;
 
+    //TODO: student can only have one wishlist for 1 semester each. Need to enforce this in service layer.
+    //one student can have many wishlists (over time)
+    @OneToMany(mappedBy = "student")
+    private List<Wishlist> wishlists;
+
     //relationship mapping to Major entity
     //TODO: What if student is a double major? What if student is a double minor?
     @ManyToOne
@@ -64,7 +70,6 @@ public class Student {
     @ManyToOne
     @JoinColumn(name = "minor_id")
     private Minor minor;
-
 
 
 }

@@ -1,11 +1,13 @@
 package com.university.UniversityPortal;
 
+import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
 import com.university.UniversityPortal.Domain.Course.Course;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
 import com.university.UniversityPortal.Domain.StudentHold.HoldType;
 import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
+import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import com.university.UniversityPortal.Repository.*;
 import com.university.UniversityPortal.Services.RegistrationService;
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,8 @@ public class RegistrationServiceIT {
     EnrollmentRepository enrollmentRepository;
     @Autowired
     StudentHoldRepository studentHoldRepository;
+    @Autowired
+    private WishlistRepository wishlistRepository;
 
     //
     @Test
@@ -437,4 +441,165 @@ public class RegistrationServiceIT {
                 studentId, offeringId
         )).isFalse();
     }
+
+    @Test
+    void addClass_toWishlist_succeeds() {
+        Student s = new Student();
+        s.setFirstName("Wish");
+        s.setLastName("Lister");
+        s.setDateOfBirth(LocalDate.of(1999, 11, 11));
+        s.setStatus("ACTIVE");
+        s = studentRepository.save(s);
+
+        Course c = new Course();
+        c.setCourseName("Art History 101");
+        c.setCourseCode("ART-101");
+        c.setCreditHours(3);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Fall 2025");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(30);
+        offering = courseOfferingRepository.save(offering);
+
+        long beforeWishlistCount = wishlistRepository.count();
+
+        Wishlist item = registrationService.addToWishlist(s.getStudentId(), offering.getOfferingId());
+
+        assertThat(item.getId()).isNotNull();
+        assertThat(item.getStudent().getStudentId()).isEqualTo(s.getStudentId());
+        assertThat(item.getCourseOffering().getOfferingId()).isEqualTo(offering.getOfferingId());
+
+        assertThat(wishlistRepository.count()).isEqualTo(beforeWishlistCount + 1);
+
+        assertThat(
+                wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(
+                        s.getStudentId(), offering.getOfferingId()).isPresent()
+        ).isTrue();
+    }
+
+    @Test
+    void removeClass_fromWishlist_succeeds() {
+        Student s = new Student();
+        s.setFirstName("Remove");
+        s.setLastName("Me");
+        s.setDateOfBirth(LocalDate.of(1998, 8, 8));
+        s.setStatus("ACTIVE");
+        s = studentRepository.save(s);
+
+        Course c = new Course();
+        c.setCourseName("Music Theory 101");
+        c.setCourseCode("MUS-101");
+        c.setCreditHours(3);
+        c = courseRepository.save(c);
+
+        CourseOffering offering = new CourseOffering();
+        offering.setCourse(c);
+        offering.setTerm("Fall 2025");
+        offering.setSection((short) 1);
+        offering.setSeatCapacity(30);
+        offering = courseOfferingRepository.save(offering);
+
+        Wishlist item = registrationService.addToWishlist(s.getStudentId(), offering.getOfferingId());
+
+        assertThat(
+                wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(
+                        s.getStudentId(), offering.getOfferingId()).isPresent()
+        ).isTrue();
+
+        long beforeCount = wishlistRepository.count();
+
+        registrationService.removeFromWishlist(s.getStudentId(), offering.getOfferingId());
+
+        assertThat(wishlistRepository.count()).isEqualTo(beforeCount - 1);
+        assertThat(
+                wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(
+                        s.getStudentId(), offering.getOfferingId()).isPresent()
+        ).isFalse();
+    }
+
+    @Test
+    void registerAllFromWishlist_registersAllOfferings(){
+        Student s = new Student();
+        s.setFirstName("Batch");
+        s.setLastName("Register");
+        s.setDateOfBirth(LocalDate.of(1997, 7, 7));
+        s.setStatus("ACTIVE");
+        s = studentRepository.save(s);
+
+        Course c1 = new Course();
+        c1.setCourseName("Economics 101");
+        c1.setCourseCode("ECON-101");
+        c1.setCreditHours(3);
+        c1 = courseRepository.save(c1);
+
+        CourseOffering offering1 = new CourseOffering();
+        offering1.setCourse(c1);
+        offering1.setTerm("Fall 2025");
+        offering1.setSection((short) 1);
+        offering1.setSeatCapacity(30);
+        offering1 = courseOfferingRepository.save(offering1);
+
+        Course c2 = new Course();
+        c2.setCourseName("Sociology 101");
+        c2.setCourseCode("SOC-101");
+        c2.setCreditHours(3);
+        c2 = courseRepository.save(c2);
+
+        CourseOffering offering2 = new CourseOffering();
+        offering2.setCourse(c2);
+        offering2.setTerm("Fall 2025");
+        offering2.setSection((short) 1);
+        offering2.setSeatCapacity(30);
+        offering2 = courseOfferingRepository.save(offering2);
+
+        Course c3 = new Course();
+        c3.setCourseName("Psychology 101");
+        c3.setCourseCode("PSY-101");
+        c3.setCreditHours(3);
+        c3 = courseRepository.save(c3);
+
+        CourseOffering offering3 = new CourseOffering();
+        offering3.setCourse(c3);
+        offering3.setTerm("Fall 2025");
+        offering3.setSection((short) 1);
+        offering3.setSeatCapacity(30);
+        offering3 = courseOfferingRepository.save(offering3);
+
+        //add all offerings to wishlist
+        registrationService.addToWishlist(s.getStudentId(), offering1.getOfferingId());
+        registrationService.addToWishlist(s.getStudentId(), offering2.getOfferingId());
+        registrationService.addToWishlist(s.getStudentId(), offering3.getOfferingId());
+
+        long beforeEnrollments = enrollmentRepository.count();
+
+        //register all from wishlist
+        var results = registrationService.registerAllFromWishlist(s.getStudentId(), "Fall 2025");
+
+        assertThat(results.size()).isEqualTo(3);
+
+        //every registration should be successful
+        assertThat(results.stream().allMatch(BatchRegistrationResult::success)).isTrue();
+
+        //verify enrollments exist for both offerings
+        assertThat(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
+                s.getStudentId(), offering1.getOfferingId()
+        )).isTrue();
+
+        assertThat(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
+                s.getStudentId(), offering2.getOfferingId()
+        )).isTrue();
+
+        assertThat(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
+                s.getStudentId(), offering3.getOfferingId()
+        )).isTrue();
+
+        assertThat(enrollmentRepository.count()).isEqualTo(beforeEnrollments + 3);
+    }
+
+    //TODO: add test for registeringAll classes when some fail (ex: full class, hold, missing prereq)
+
+
 }
