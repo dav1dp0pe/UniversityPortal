@@ -3,33 +3,34 @@ package com.university.UniversityPortal.Domain.Wishlist;
 
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Student.Student;
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Entity
+//@Entity
 @Data
-@Table(
+
+/*@Table(
         name = "wishlist",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"student_id", "offering_id"})
         }
-)
+   )
+ */
 //TODO potentially change name to "WishlistItem" to avoid confusion with the entire wishlist
 public class Wishlist {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    //@Id
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long wishlistId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    //@ManyToOne(optional = false)
+    //@JoinColumn(name = "student_id", nullable = false)
+    private Long studentId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "offering_id", nullable = false)
-    private CourseOffering courseOffering;
-
-    private LocalDateTime addedAt = LocalDateTime.now();
+    //TODO add offeringId to table
+    private Long offeringId;
+    private LocalDateTime addedAt;
 }

@@ -1,16 +1,17 @@
 package com.university.UniversityPortal.Services;
 
-import com.university.UniversityPortal.Repository.StudentRepository;
+import com.university.UniversityPortal.Repository.StudentJDBCRepository;
+//import com.university.UniversityPortal.Repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
 //TODO: remove StudentServices if not needed
 @Service
 public class StudentServices {
 
-    private final StudentRepository studentRepository;
+    private final StudentJDBCRepository studentJDBCRepository;
 
-    public StudentServices(StudentRepository studentRepository) {
-        this.studentRepository = studentRepository;
+    public StudentServices(StudentJDBCRepository studentJDBCRepository) {
+        this.studentJDBCRepository = studentJDBCRepository;
     }
 
 }

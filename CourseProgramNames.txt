@@ -1,0 +1,159 @@
+Accounting (ACC)
+Anthropology (ANT)
+Arabic (ARI)
+Art (ARTA, ARTC, ARTD, ARTE, ARTH, ARTM, ARTO, ARTP, ARTR, ARTS, ARTV)
+Applied Software Engineering (ASE)
+American Sign Language (ASL)
+Astronomy (AST)
+Athletic Training Program (ATP)
+Biology (BIO)
+Black Studies (BLS)
+Business (BUS)
+Cultivating Academic Success (CAS)
+Cooperative Education (CEP)
+Chemistry (CHE)
+Chinese (CHI)
+College of Health Professions (CHP)
+Cinema Studies (CIN)
+Computer Information Technology (CIT)
+Construction Management (CMGT)
+Communications (CMST, COM)
+Counseling (COU)
+Computer Science (CSC)
+Career/Technical Education (CTE)
+Cybersecurity (CYS)
+Dance (DAN)
+Data Science (DSC)
+Digital Design and Visual Effects (DFX)
+Economics (ECO)
+Education in Middle School Teaching (EDMT)
+Education Specialist (EDS)
+General Education (EDU)
+Engineering Technology (EGT)
+Electronic Media Broadcasting (EMB)
+English (ENG)
+Entrepreneurship (ENTP)
+Environmental Science (ENV)
+Finance (FIN)
+Financial Success (FLC)
+French (FRE)
+Geography (GEO)
+German (GER)
+Geology (GLY)
+Global Supply Chain Management (GSCM)
+Health Communication (HCOM)
+Health Education (HEA)
+Health and Human Services (HHS)
+Health Informatics (HIN)
+History (HIS)
+Honors College (HNR)
+Health and Physical Education (HPE)
+Human Resources Management (HRM)
+Health Science (HSC)
+Human Services and Addictions (HSR)
+International Business (IBU)
+Informatics (INF)
+International Service Learning (INTL)
+Information Systems & Business Analytics (ISBA)
+Independent Study (IST)
+Italian (ITA)
+Journalism (JOU)
+Japanese (JPN)
+Criminal Justice (JUS)
+Kinesiology (KIN) 
+Korean (KOR)
+Learning Assistance (LAP)
+Latin (LAT)
+Law (LAW)
+Leadership (LDR)
+Literacy (LIN)
+Mathematics (MAT)
+Masters Business Informatics (MBI)
+Medieval Studies (MDS)
+Management (MGT)
+Master of Health Informatics (MHI)
+Marketing (MKT)
+MSC???
+Music (MUS, MUSA, MUSE, MUSM)
+Neuroscience (NEU)
+Nursing (NRP, NRS)
+Nutrition (NTR)
+Public Administration (PAD)
+Physical Education (PHE)
+Philosophy (PHI)
+Physics (PHY)
+Pop Culture (POP)
+Public Relations (PRE)
+Political Science (PSC)
+Psychology (PSY)
+Radiology (RAD)
+Reading (RDG)
+Religions (REL)
+Respiratory Care (RSP)
+Radiation Therapy (RTT)
+Russian (RUS)
+Sciences (SCI)
+Sociology (SOC)
+Sports Business (SPB)
+Spanish (SPI)
+Statistics (STA)
+Study, Think, Act, Reflect (STAR)
+Social Work (SWK)
+Theatre (TAR)
+First Year Seminar (UNV)
+International Orientation (UNVI)
+Women's and Gender Studies (WGS)
+World Languages and Literatures (WLL)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

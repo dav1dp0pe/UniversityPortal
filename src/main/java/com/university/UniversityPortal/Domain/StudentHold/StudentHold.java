@@ -1,29 +1,40 @@
 package com.university.UniversityPortal.Domain.StudentHold;
 
 import com.university.UniversityPortal.Domain.Student.Student;
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "student_hold")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class StudentHold {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+   // @Id
+   // @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+   // @ManyToOne(optional = false)
+   // @JoinColumn(name = "student_id", nullable = false)
+    private Long studentId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private HoldType holdType;
+    //@Enumerated(EnumType.STRING)
+    //@Column(nullable = false)
+    public enum HoldType{
+        FINANCIAL,
+        ACADEMIC,
+        DISCIPLINARY,
+        LIBRARY,
+        ADVISING,
+        OTHER
+    }
 
-    @Column(nullable = false)
+    //@Column(nullable = false)
     private boolean active;
 
     private String reason;

@@ -11,69 +11,83 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 //TODO: add @transactional where needed
+//TODO: replace repository call with DAO methods that use SQL
+//      Explicitly load related data instead of relying on JPA relationships where appropriate for performance
+//      Ensure all write operations are performed with transactions using JDBC
+//      Update tests to reflect the new data access pattern and SQL-based data setup
 @Service
 public class RegistrationService {
 
-    private final EnrollmentRepository enrollmentRepository;
-    private final StudentRepository studentRepository;
-    private final CourseOfferingRepository courseOfferingRepository;
-    private final StudentHoldRepository studentHoldRepository;
-    private final WishlistRepository wishlistRepository;
+    private final EnrollmentJDBCRepository enrollmentJDBCRepository;
+    private final StudentJDBCRepository studentJDBCRepository;
+    private final CourseOfferingJDBCRepository courseOfferingJDBCRepository;
+    private final StudentHoldJDBCRepository studentHoldJDBCRepository;
+    private final WishlistJDBCRepository wishlistJDBCRepository;
+    private final CourseJDBCRepository courseJDBCRepository;
 
     //constructor
-    public RegistrationService(EnrollmentRepository enrollmentRepository,
-                               StudentRepository studentRepository,
-                               CourseOfferingRepository courseOfferingRepository, StudentHoldRepository studentHoldRepository, WishlistRepository wishlistRepository) {
-        this.enrollmentRepository = enrollmentRepository;
-        this.studentRepository = studentRepository;
-        this.courseOfferingRepository = courseOfferingRepository;
-        this.studentHoldRepository = studentHoldRepository;
-        this.wishlistRepository = wishlistRepository;
+    public RegistrationService(EnrollmentJDBCRepository enrollmentJDBCRepository,
+                               StudentJDBCRepository studentJDBCRepository,
+                               CourseOfferingJDBCRepository courseOfferingJDBCRepository, StudentHoldJDBCRepository studentHoldJDBCRepository, WishlistJDBCRepository wishlistJDBCRepository, CourseJDBCRepository courseJDBCRepository) {
+        this.enrollmentJDBCRepository = enrollmentJDBCRepository;
+        this.studentJDBCRepository = studentJDBCRepository;
+        this.courseOfferingJDBCRepository = courseOfferingJDBCRepository;
+        this.studentHoldJDBCRepository = studentHoldJDBCRepository;
+        this.wishlistJDBCRepository = wishlistJDBCRepository;
+        this.courseJDBCRepository = courseJDBCRepository;
     }
 
+    //TODO perform integration test
     @Transactional
     public Wishlist addToWishlist(Long studentId, long offeringId) {
+
+        //TODO may not be needed
         //1. load student
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
+        studentJDBCRepository.findStudentById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
 
         //2. load offering
-        CourseOffering offering = courseOfferingRepository.findById(offeringId)
+        courseOfferingJDBCRepository.findByOfferingId(offeringId)
                 .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
 
         //3. check if already in wishlist
-        if(wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId).isPresent()) {
+        //TODO change this to be JDBC instead of JPA
+        if(wishlistJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
             throw new RuntimeException("student " + studentId + " already has offering " + offeringId + " in wishlist");
         }
 
         //4. create wishlist record
         Wishlist item = new Wishlist();
-        item.setStudent(student);
-        item.setCourseOffering(offering);
+        item.setStudentId(studentId);
+        item.setOfferingId(offeringId);
         item.setAddedAt(LocalDateTime.now());
 
-        return wishlistRepository.save(item);
+        return wishlistJDBCRepository.save(item);
     }
 
+    //TODO perform integration test
     @Transactional
     public void removeFromWishlist(Long studentId, long offeringId) {
         //find wishlist record
-        Wishlist item = wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId)
-                .orElseThrow(() -> new RuntimeException("wishlist item not found for student " + studentId + " and offering " + offeringId));
+        int rows = wishlistJDBCRepository.deleteByStudentIdAndOfferingId(studentId, offeringId);
 
-        wishlistRepository.delete(item);
+        if (rows == 0){
+            throw new RuntimeException("wishlist item not found for student " + studentId + " and offering " + offeringId);
+        }
     }
 
+    //TODO perform integration test
     @Transactional
     public List<BatchRegistrationResult> registerAllFromWishlist(Long studentId, String term) {
 
-        List<Wishlist> wishlistItems = wishlistRepository.findByStudent_StudentIdAndCourseOffering_Term(studentId, term);
-        List<BatchRegistrationResult> results = new java.util.ArrayList<>();
+        List<Wishlist> wishlistItems = wishlistJDBCRepository.findByStudentIdAndTerm(studentId, term);
+        List<BatchRegistrationResult> results = new ArrayList<>();
 
         for (Wishlist item : wishlistItems) {
-            Long offeringId = item.getCourseOffering().getOfferingId();
+            Long offeringId = item.getOfferingId();
             try {
                 Enrollment enrollment = registerForClass(studentId, offeringId);
                 results.add(new BatchRegistrationResult(offeringId, true, "Registered successfully as " + enrollment.getEnrollmentStatus()));
@@ -84,124 +98,142 @@ public class RegistrationService {
 
         return results;
     }
-
+    //TODO: refactor all instances of enrollment
     //service to register for classes
     //TODO: add checks for unique student IDs, valid course capacity, and prerequisites
     @Transactional
     public Enrollment registerForClass (Long studentId, Long offeringId) {
 
         //1. load student
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
+        studentJDBCRepository.findStudentById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
 
         //TODO provide more detailed hold information
         //2. check for holds
-        if(studentHoldRepository.existsByStudent_StudentIdAndActiveTrue(studentId)){
+        if(studentHoldJDBCRepository.existsActiveByStudentId(studentId)){
             throw new RuntimeException("Student has an active hold and cannot register.");
         }
 
         //3. lock offering row to prevent seat race condition
-        CourseOffering offering = courseOfferingRepository.findByIdForUpdate(offeringId)
+        CourseOffering offering = courseOfferingJDBCRepository.findByOfferingId(offeringId)
                 .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
 
         //4. check if already enrolled
-        if(enrollmentRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(studentId, offeringId)) {
+        if(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
             throw new RuntimeException("student " + studentId + " is already enrolled in offering " + offeringId);
         }
 
         //5. check seat capacity
-        long enrolledCount = enrollmentRepository.countActiveByOfferingId(offeringId);
+        long enrolledCount = enrollmentJDBCRepository.countActiveByOfferingId(offeringId);
         boolean hasSeats = enrolledCount < offering.getSeatCapacity();
 
         //TODO prerequisites looks sus
         //6. Prerequisites check
-        Course course = offering.getCourse();
-        if(course.getPrerequisites() != null && !course.getPrerequisites().isEmpty()) {
-            for(Course prereq : course.getPrerequisites()) {
-                long completed = enrollmentRepository.countCompletedCourses(studentId, List.of(prereq.getCourseId()));  //TODO: do we need List.of()?
-                if (completed == 0) {
-                    throw new RuntimeException("student " + studentId + " has not completed prerequisite " + prereq.getCourseCode() + " for offering " + offeringId);
-                }
+        Long courseId = offering.getCourseId();
+        List<Long> prerequisiteIds = courseJDBCRepository.findPrerequisiteCourseIds(courseId);
+
+        //TODO: later, implement logic to check student's grade for course
+        if(!prerequisiteIds.isEmpty()) {
+            long completedCount = enrollmentJDBCRepository.countCompletedCourses(studentId, prerequisiteIds);
+
+            if(completedCount != prerequisiteIds.size()) {
+                throw new RuntimeException("student " + studentId + " has not completed all prerequisites for course " + courseId);
             }
         }
 
         //6. create enrollment record
         Enrollment e = new Enrollment();
-        e.setStudent(student);
-        e.setCourseOffering(offering);
-        e.setEnrolledAt(java.time.LocalDateTime.now());
+        e.setStudentId(studentId);
+        e.setOfferingId(offeringId);
+        e.setEnrolledAt(LocalDateTime.now());
+        e.setLastUpdated(LocalDateTime.now());
+        e.setCreditsAttempted(0);   //TODO: set to offering/ course credit hours
 
         if (hasSeats) {
             e.setEnrollmentStatus(Enrollment.EnrollmentStatus.ENROLLED);
+            e.setWaitlistPosition(null);
         } else {
+            long waitlistedCount = enrollmentJDBCRepository.countWaitlistedByOfferingId(offeringId);
+            int nextPosition = (int) (waitlistedCount + 1);
             e.setEnrollmentStatus(Enrollment.EnrollmentStatus.WAITLISTED);
             //set waitlist position
-            long waitlistPosition = enrolledCount - offering.getSeatCapacity() + 1;
-            e.setWaitlistPosition((int) waitlistPosition);
+            e.setWaitlistPosition(nextPosition);
         }
 
-        return enrollmentRepository.save(e);
+        return enrollmentJDBCRepository.save(e);
     }
 
     //TODO: Map invalid dropped class to 400 or 409 error with an exception handler
     @Transactional
     public Enrollment dropClass(Long studentId, Long offeringId) {
 
-        //find enrollment or waitlist record
-        Enrollment enrollment = enrollmentRepository.findByStudent_StudentIdAndCourseOffering_OfferingIdAndEnrollmentStatusIn(
+        //1. find enrollment or waitlist record
+        Enrollment enrollment = enrollmentJDBCRepository.findByStudentIdAndOfferingIdWithStatuses(
                 studentId,
                 offeringId,
                 List.of(Enrollment.EnrollmentStatus.ENROLLED, Enrollment.EnrollmentStatus.WAITLISTED)
         ).orElseThrow(() -> new RuntimeException("enrollment/waitlist is not found for student " + studentId + " in offering " + offeringId));
 
         //store old status
+        //TODO: refactor
         Enrollment.EnrollmentStatus oldStatus = enrollment.getEnrollmentStatus();
 
         //capture dropped position
+        //TODO: refactor
         Integer droppedPosition = enrollment.getWaitlistPosition();
+        LocalDateTime now = LocalDateTime.now();
 
-        //update enrollment to dropped
+        //2. update enrollment to dropped
         enrollment.setEnrollmentStatus(Enrollment.EnrollmentStatus.DROPPED);
-        enrollment.setDroppedAt(LocalDateTime.now());
-        enrollment.setLastUpdated(LocalDateTime.now());
+        enrollment.setDroppedAt(now);
+        enrollment.setLastUpdated(now);
         enrollment.setWaitlistPosition(null);
-        enrollmentRepository.save(enrollment);
+        enrollmentJDBCRepository.save(enrollment);
 
-        //Only open up a spot if the student was enrolled, not waitlisted
+        //3. Only open up a spot if the student was enrolled, not waitlisted
+        //promote the first waitlisted student (position 1) to ENROLLED
+        //shift everyone behind them up by 1 in the waitlist
         if(oldStatus == Enrollment.EnrollmentStatus.ENROLLED) {
             //promote next waitlisted student, if any
-            enrollmentRepository.findFirstByCourseOffering_OfferingIdAndEnrollmentStatusOrderByWaitlistPositionAsc(offeringId, Enrollment.EnrollmentStatus.WAITLISTED)
+            enrollmentJDBCRepository.findFirstWaitlistedByOffering(offeringId)
                     .ifPresent(nextInLine -> {
+
+                        Integer promotedFromPos = nextInLine.getWaitlistPosition();
+                        LocalDateTime nowInner = LocalDateTime.now();
+
                         nextInLine.setEnrollmentStatus(Enrollment.EnrollmentStatus.ENROLLED);
                         nextInLine.setWaitlistPosition(null);
-                        nextInLine.setLastUpdated(LocalDateTime.now());
-                        enrollmentRepository.save(nextInLine);
+                        nextInLine.setLastUpdated(nowInner);
+                        enrollmentJDBCRepository.update(nextInLine);
 
-                        //decrement waitlist positions for those behind the promoted student
-                        List<Enrollment> remaining = enrollmentRepository.findByCourseOffering_OfferingIdAndEnrollmentStatusAndWaitlistPositionGreaterThanOrderByWaitlistPositionAsc(
-                                offeringId, Enrollment.EnrollmentStatus.WAITLISTED, 1);
+                        if(promotedFromPos != null) {
+                            List<Enrollment> remaining = enrollmentJDBCRepository.findWaitlistedWithPositionGreaterThan(offeringId, promotedFromPos);
 
-                        for (Enrollment e : remaining) {
-                            e.setWaitlistPosition(e.getWaitlistPosition() - 1);
-                            e.setLastUpdated(LocalDateTime.now());
+                            for (Enrollment e : remaining) {
+                                e.setWaitlistPosition(e.getWaitlistPosition() - 1);
+                                e.setLastUpdated(nowInner);
+                            }
+                            enrollmentJDBCRepository.updateAll(remaining);
                         }
-                        enrollmentRepository.saveAll(remaining);
                     });
             return enrollment;
         }
 
 
         //if the student was waitlisted, promote the next in line by adjusting their waitlist position
-        else if(oldStatus == Enrollment.EnrollmentStatus.WAITLISTED && droppedPosition != null) {
-            List<Enrollment> shifted = enrollmentRepository.findByCourseOffering_OfferingIdAndEnrollmentStatusAndWaitlistPositionGreaterThanOrderByWaitlistPositionAsc(
-                    offeringId, Enrollment.EnrollmentStatus.WAITLISTED, droppedPosition);
+        if(oldStatus == Enrollment.EnrollmentStatus.WAITLISTED && droppedPosition != null) {
+            List<Enrollment> shifted = enrollmentJDBCRepository.findWaitlistedWithPositionGreaterThan(offeringId, droppedPosition);
 
             for (Enrollment e : shifted) {
                 e.setWaitlistPosition(e.getWaitlistPosition() - 1);
                 e.setLastUpdated(LocalDateTime.now());
             }
-            enrollmentRepository.saveAll(shifted);
+            enrollmentJDBCRepository.updateAll(shifted);
         }
         return enrollment;
     }
 
+    //TODO add wishlist helper method?
+    //  public List<Wishlist> getWishlistsForStudent(Long studentId) {
+    //    return wishlistJdbcRepository.findByStudentId(studentId);
+    //}
 }
