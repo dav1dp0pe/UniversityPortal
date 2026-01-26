@@ -13,10 +13,13 @@ import com.university.UniversityPortal.Services.RegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.test.context.ActiveProfiles;
 //import org.springframework.test.context.DynamicPropertyRegistry;
 //import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 //import org.testcontainers.containers.PostgreSQLContainer;
 //import org.testcontainers.junit.jupiter.Container;
 //import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,6 +35,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @ActiveProfiles("test")
 @SpringBootTest
+@Transactional
 public class RegistrationServiceIT {
 
 /*    //TODO: verify username, password, and database name
@@ -55,8 +59,9 @@ public class RegistrationServiceIT {
 
 */
     @Autowired
+    JdbcTemplate jdbcTemplate;
+    @Autowired
     RegistrationService registrationService;
-    
     @Autowired
     StudentJDBCRepository studentJDBCRepository;
     @Autowired
@@ -71,6 +76,35 @@ public class RegistrationServiceIT {
     private WishlistJDBCRepository wishlistJDBCRepository;
 
     //
+
+    @Test
+    void canSeeTables() {
+        Integer count = jdbcTemplate.queryForObject(
+                "select count(*) from information_schema.tables", Integer.class);
+        System.out.println("tables=" + count);
+    }
+
+    @Test
+    void studentsTableExists(){
+        Integer n = jdbcTemplate.queryForObject("""
+                        SELECT COUNT(*)
+                        FROM information_schema.tables
+                        WHERE upper(table_schema) = 'PUBLIC'
+                        AND upper(table_name) = 'STUDENTS'
+                        """, Integer.class);
+        System.out.println("student tables found = " + n);
+    }
+
+    @Test
+    void listAllTables() {
+        jdbcTemplate.query("""
+            select table_schema, table_name
+            from information_schema.tables
+            where table_type = 'TABLE'
+            """, (RowCallbackHandler) rs ->
+                System.out.println(rs.getString("table_schema") + "." + rs.getString("table_name"))
+        );
+    }
     @Test
     void register_for_class_createsEnrollment() {
         Student s = new Student();

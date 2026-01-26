@@ -44,7 +44,7 @@ public class StudentJDBCRepository {
     public Optional<Student> findByEmail(String email) {
         String sql = """
                 SELECT *
-                FROM student
+                FROM students
                 WHERE email = ?
                 """;
         List<Student> result = jdbcTemplate.query(sql, studentRowMapper, email);
@@ -62,7 +62,7 @@ public class StudentJDBCRepository {
 
     private Student insert(Student student) {
         String sql = """
-                INSERT INTO student
+                INSERT INTO students
                     (first_name, middle_name, last_name,
                     date_of_birth, status, email, phone_number,
                     address, gpa, credits_completed, credits_attempted,
@@ -116,7 +116,7 @@ public class StudentJDBCRepository {
 
     private void update(Student student) {
         String sql = """
-                UPDATE student
+                UPDATE students
                    SET first_name = ?,
                    middle_name = ?,
                    last_name = ?,
@@ -153,7 +153,7 @@ public class StudentJDBCRepository {
 
     public void delete(Long studentId) {
         String sql = """
-                DELETE FROM student
+                DELETE FROM students
                 WHERE student_id = ?
         """;
         jdbcTemplate.update(sql, studentId);
