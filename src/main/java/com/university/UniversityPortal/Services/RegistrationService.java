@@ -10,6 +10,7 @@ import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import com.university.UniversityPortal.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.university.UniversityPortal.Domain.Course.Course;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -136,6 +137,9 @@ public class RegistrationService {
         Long courseId = offering.getCourseId();
         List<CoursePrerequisites> prerequisites = coursePrerequisiteJDBCRepository.findByCourseId(courseId);
 
+        //load course info for error message
+        Course course = courseJDBCRepository.findCourseById(courseId);
+
         //TODO: later, implement logic to check student's grade for course
         if(!prerequisites.isEmpty()) {
             Map<Integer, List<CoursePrerequisites>> grouped = prerequisites.stream().collect(Collectors.groupingBy(CoursePrerequisites::getGroupId));
@@ -144,7 +148,8 @@ public class RegistrationService {
                         .anyMatch(prereq -> hasSatisfiedPrerequisite(studentId, prereq));
 
                 if (!satisfied) {
-                    throw new RuntimeException("student " + studentId + " has not completed all prerequisites for course " + courseId);
+                    throw new RuntimeException("You have not completed all prerequisites for " + course.getCourseCode());
+                    //TODO, show missing prerequisites in the error message
                 }
             }
         }
@@ -160,12 +165,14 @@ public class RegistrationService {
         if (hasSeats) {
             e.setEnrollmentStatus(Enrollment.EnrollmentStatus.ENROLLED);
             e.setWaitlistPosition(null);
+            System.out.println("You have successfully enrolled in offering for " + course.getCourseCode());
         } else {
             long waitlistedCount = enrollmentJDBCRepository.countWaitlistedByOfferingId(offeringId);
             int nextPosition = (int) (waitlistedCount + 1);
             e.setEnrollmentStatus(Enrollment.EnrollmentStatus.WAITLISTED);
             //set waitlist position
             e.setWaitlistPosition(nextPosition);
+            System.out.println("You have successfully waitlisted in offering for " + course.getCourseCode());
         }
 
         return enrollmentJDBCRepository.save(e);
@@ -199,7 +206,7 @@ public class RegistrationService {
                 studentId,
                 offeringId,
                 List.of(Enrollment.EnrollmentStatus.ENROLLED, Enrollment.EnrollmentStatus.WAITLISTED)
-        ).orElseThrow(() -> new RuntimeException("enrollment/waitlist is not found for student " + studentId + " in offering " + offeringId));
+        ).orElseThrow(() -> new RuntimeException("Student is not enrolled or waitlisted for this offering."));
 
         //store old status
         //TODO: refactor

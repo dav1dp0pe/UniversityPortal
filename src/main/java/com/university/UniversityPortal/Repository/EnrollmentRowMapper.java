@@ -15,7 +15,7 @@ public class EnrollmentRowMapper implements RowMapper<Enrollment> {
     public Enrollment mapRow(ResultSet rs, int rowNum) throws SQLException {
         Enrollment enrollment = new Enrollment();
 
-        enrollment.setId(rs.getLong("id"));
+        enrollment.setId(rs.getLong("enrollment_id"));
         if(rs.wasNull()){
             enrollment.setId(null);
         }

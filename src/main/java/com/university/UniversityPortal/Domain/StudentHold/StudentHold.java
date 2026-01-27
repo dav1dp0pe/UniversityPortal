@@ -17,7 +17,7 @@ public class StudentHold {
 
    // @Id
    // @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long holdId;
 
    // @ManyToOne(optional = false)
    // @JoinColumn(name = "student_id", nullable = false)
@@ -34,10 +34,11 @@ public class StudentHold {
         OTHER
     }
 
+    private HoldType holdType;
     //@Column(nullable = false)
     private boolean active;
 
     private String reason;
     private LocalDateTime placedAt; //when hold was placed
-    private LocalDateTime releasedAt;   //when hold was released
+    private LocalDateTime clearedAt;   //when hold was released
 }

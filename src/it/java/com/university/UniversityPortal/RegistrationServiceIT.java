@@ -230,11 +230,8 @@ public class RegistrationServiceIT {
         try {
             registrationService.registerForClass(s.getStudentId(), offering.getOfferingId());
         } catch (RuntimeException e) {
-            assertThat(e.getMessage()).contains("has not completed prerequisite");
+            assertThat(e.getMessage()).contains("You have not completed all prerequisites for MATH-200");
         }
-
-
-
 
         // 5) attempt registration -> should fail
         assertThatThrownBy(() ->
@@ -248,7 +245,7 @@ public class RegistrationServiceIT {
         )).isFalse();
     }
 
-    /*
+
     @Test
     void dropClass_whenNotRegistered_throwsException() {
         Student s = new Student();
@@ -256,6 +253,7 @@ public class RegistrationServiceIT {
         s.setLastName("Hanks");
         s.setDateOfBirth(LocalDate.of(2000, 12, 25));
         s.setStatus("ACTIVE");
+        s.setEmail("hankst1@example.com");
         s = studentJDBCRepository.save(s);
 
         Course c = new Course();
@@ -265,21 +263,24 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Fall 2025");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Fall 2025");
         offering.setSection((short) 1);
         offering.setSeatCapacity(1);
         offering = courseOfferingJDBCRepository.save(offering);
 
         long studentId = s.getStudentId();
         long offeringId = offering.getOfferingId();
-        long beforeEnrollments = enrollmentJDBCRepository.count();
+        long beforeEnrollments = enrollmentJDBCRepository.countActiveByOfferingId(offeringId);;
 
         assertThatThrownBy(() ->
                 registrationService.dropClass(studentId, offeringId)
-        ).isInstanceOf(RuntimeException.class);
+        ).isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Student is not enrolled or waitlisted for this offering.");
 
-        assertThat(enrollmentJDBCRepository.count()).isEqualTo(beforeEnrollments);
+        assertThat(enrollmentJDBCRepository.countActiveByOfferingId(offeringId)).isEqualTo(beforeEnrollments);
+
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)).isFalse();
     }
 
     //TODO, what if someone is behind the waitlisted person? They should be promoted up
@@ -292,8 +293,8 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Spring 2026");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Spring 2026");
         offering.setSection((short) 1);
         offering.setSeatCapacity(1);
         offering = courseOfferingJDBCRepository.save(offering);
@@ -304,6 +305,7 @@ public class RegistrationServiceIT {
         studentA.setLastName("A");
         studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
         studentA.setStatus("ACTIVE");
+        studentA.setEmail("studentA@example.edu");
         studentA = studentJDBCRepository.save(studentA);
 
         //Student B - will be waitlisted
@@ -312,6 +314,7 @@ public class RegistrationServiceIT {
         studentB.setLastName("B");
         studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
         studentB.setStatus("ACTIVE");
+        studentB.setEmail("studentB@example.edu");
         studentB = studentJDBCRepository.save(studentB);
 
         long offeringId = offering.getOfferingId();
@@ -341,8 +344,8 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Spring 2026");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Spring 2026");
         offering.setSection((short) 1);
         offering.setSeatCapacity(1);
         offering = courseOfferingJDBCRepository.save(offering);
@@ -353,6 +356,7 @@ public class RegistrationServiceIT {
         studentA.setLastName("A");
         studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
         studentA.setStatus("ACTIVE");
+        studentA.setEmail("studentA@example.edu");
         studentA = studentJDBCRepository.save(studentA);
 
         //Student B - will be waitlisted
@@ -361,6 +365,7 @@ public class RegistrationServiceIT {
         studentB.setLastName("B");
         studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
         studentB.setStatus("ACTIVE");
+        studentB.setEmail("studentB@example.edu");
         studentB = studentJDBCRepository.save(studentB);
 
         long offeringId = offering.getOfferingId();
@@ -390,8 +395,8 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Spring 2026");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Spring 2026");
         offering.setSection((short) 1);
         offering.setSeatCapacity(1);
         offering = courseOfferingJDBCRepository.save(offering);
@@ -402,6 +407,7 @@ public class RegistrationServiceIT {
         studentA.setLastName("A");
         studentA.setDateOfBirth(LocalDate.of(2001, 1, 1));
         studentA.setStatus("ACTIVE");
+        studentA.setEmail("studentA@example.edu");
         studentA = studentJDBCRepository.save(studentA);
 
         //Student B - will be waitlisted
@@ -410,6 +416,7 @@ public class RegistrationServiceIT {
         studentB.setLastName("B");
         studentB.setDateOfBirth(LocalDate.of(2002, 2, 2));
         studentB.setStatus("ACTIVE");
+        studentB.setEmail("studentB@example.edu");
         studentB = studentJDBCRepository.save(studentB);
 
         //Student C - will be waitlisted second
@@ -418,6 +425,7 @@ public class RegistrationServiceIT {
         studentC.setLastName("C");
         studentC.setDateOfBirth(LocalDate.of(2003, 3, 3));
         studentC.setStatus("ACTIVE");
+        studentC.setEmail("studentC@example.edu");
         studentC = studentJDBCRepository.save(studentC);
 
         long offeringId = offering.getOfferingId();
@@ -446,6 +454,7 @@ public class RegistrationServiceIT {
         assertThat(checkAfterDropC.getWaitlistPosition()).isEqualTo(1);
     }
 
+
     @Test
     void registerClass_advisingHold_throwsException() {
         Student s = new Student();
@@ -453,17 +462,18 @@ public class RegistrationServiceIT {
         s.setLastName("Student");
         s.setDateOfBirth(LocalDate.of(2000, 6, 15));
         s.setStatus("ACTIVE");
+        s.setEmail("student1@example.com");
 
         s = studentJDBCRepository.save(s);
 
         //put an advising hold on the student
         StudentHold hold = new StudentHold();
-        hold.setStudent(s);
-        hold.setHoldType(HoldType.ADVISING);
+        hold.setStudentId(s.getStudentId());
+        hold.setHoldType(StudentHold.HoldType.ADVISING);
         hold.setReason("Advising hold prevents registration until advisor approval.");
         hold.setActive(true);
         hold.setPlacedAt(LocalDateTime.now());
-        studentHoldRepository.save(hold);
+        studentHoldJDBCRepository.save(hold);
 
         Course c = new Course();
         c.setCourseName("Philosophy 101");
@@ -472,25 +482,24 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Fall 2025");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Fall 2025");
         offering.setSection((short) 1);
         offering.setSeatCapacity(30);
         offering = courseOfferingJDBCRepository.save(offering);
 
         long studentId = s.getStudentId();
         long offeringId = offering.getOfferingId();
-        long beforeEnrollments = enrollmentJDBCRepository.count();
+        long beforeEnrollments = enrollmentJDBCRepository.countActiveByOfferingId(offeringId);;
 
         assertThatThrownBy(() ->
                 registrationService.registerForClass(studentId, offeringId)
         ).isInstanceOf(RuntimeException.class)
          .hasMessageContaining("Student has an active hold and cannot register.");
 
-        assertThat(enrollmentJDBCRepository.count()).isEqualTo(beforeEnrollments);
-        assertThat(enrollmentJDBCRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
-                studentId, offeringId
-        )).isFalse();
+        assertThat(enrollmentJDBCRepository.countActiveByOfferingId(offeringId)).isEqualTo(beforeEnrollments);
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)).isFalse();
+
     }
 
     @Test
@@ -500,6 +509,7 @@ public class RegistrationServiceIT {
         s.setLastName("Lister");
         s.setDateOfBirth(LocalDate.of(1999, 11, 11));
         s.setStatus("ACTIVE");
+        s.setEmail("wishlist1@example.edu");
         s = studentJDBCRepository.save(s);
 
         Course c = new Course();
@@ -509,28 +519,28 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Fall 2025");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Fall 2025");
         offering.setSection((short) 1);
         offering.setSeatCapacity(30);
         offering = courseOfferingJDBCRepository.save(offering);
 
-        long beforeWishlistCount = wishlistRepository.count();
+        long beforeWishlistCount = wishlistJDBCRepository.count();
 
         Wishlist item = registrationService.addToWishlist(s.getStudentId(), offering.getOfferingId());
 
-        assertThat(item.getId()).isNotNull();
-        assertThat(item.getStudent().getStudentId()).isEqualTo(s.getStudentId());
-        assertThat(item.getCourseOffering().getOfferingId()).isEqualTo(offering.getOfferingId());
+        assertThat(item.getWishlistId()).isNotNull();
+        assertThat(item.getStudentId()).isEqualTo(s.getStudentId());
+        assertThat(item.getOfferingId()).isEqualTo(offering.getOfferingId());
 
-        assertThat(wishlistRepository.count()).isEqualTo(beforeWishlistCount + 1);
+        assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeWishlistCount + 1);
 
         assertThat(
-                wishlistRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(
+                wishlistJDBCRepository.findByStudent_StudentIdAndCourseOffering_OfferingId(
                         s.getStudentId(), offering.getOfferingId()).isPresent()
         ).isTrue();
     }
-
+/*
     @Test
     void removeClass_fromWishlist_succeeds() {
         Student s = new Student();

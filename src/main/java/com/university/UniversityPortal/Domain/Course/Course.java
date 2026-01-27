@@ -30,7 +30,7 @@ public class Course {
     //TODO
     // Not auto-mapped; you'd fill this by calling another repository method
     // after loading the Course itself.
-    private List<CoursePrerequisites> prerequisites = new ArrayList<>();
+    // private List<CoursePrerequisites> prerequisites = new ArrayList<>();
 }
 
 //TODO: Decide how a course becomes "Completed" - Is it through Enrollment status or CourseOffering?

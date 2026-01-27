@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 public class EnrollmentJDBCRepository {
@@ -25,7 +26,7 @@ public class EnrollmentJDBCRepository {
     private final EnrollmentRowMapper rowMapper = new EnrollmentRowMapper();
 
     private static final String BASE_SELECT = """
-            SELECT id, student_id, offering_id,
+            SELECT enrollment_id, student_id, offering_id,
                            enrolled_at, dropped_at, grade,
                            last_updated, waitlist_position,
                            credits_attempted, enrollment_status
@@ -37,7 +38,7 @@ public class EnrollmentJDBCRepository {
     }
 
     public Optional<Enrollment> findById(Long id) {
-        String sql = BASE_SELECT + "WHERE id = ?";
+        String sql = BASE_SELECT + "WHERE enrollment_id = ?";
         List<Enrollment> result = jdbcTemplate.query(sql, rowMapper, id);
         return result.stream().findFirst();
     }
@@ -109,16 +110,21 @@ public class EnrollmentJDBCRepository {
                 waitlist_position = ?,
                 credits_attempted = ?,
                 enrollment_status = ?
-            WHERE id = ?
+            WHERE enrollment_id = ?
             """;
+
+        Timestamp enrolledAt = enrollment.getEnrolledAt() != null ? Timestamp.valueOf(enrollment.getEnrolledAt()) : null;
+        Timestamp droppedAt = enrollment.getDroppedAt() != null ? Timestamp.valueOf(enrollment.getDroppedAt()) : null;
+        Timestamp lastUpdated = enrollment.getLastUpdated() != null ? Timestamp.valueOf(enrollment.getLastUpdated()) : null;
+
 //TODO timestamp.valueOf is sus
         jdbcTemplate.update(sql,
                 enrollment.getStudentId(),
                 enrollment.getOfferingId(),
-                Timestamp.valueOf(enrollment.getEnrolledAt()),
-                Timestamp.valueOf(enrollment.getDroppedAt()),
+                enrolledAt,
+                droppedAt,
                 enrollment.getGrade(),
-                Timestamp.valueOf(enrollment.getLastUpdated()),
+                lastUpdated,
                 enrollment.getWaitlistPosition(),
                 enrollment.getCreditsAttempted(),
                 enrollment.getEnrollmentStatus() != null ? enrollment.getEnrollmentStatus().name() : null,
@@ -203,7 +209,7 @@ public class EnrollmentJDBCRepository {
               AND (? IS NULL OR gw.weight IS NOT NULL AND gw.weight >= ?)
             """;
 
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, studentId, courseId, minGrade);
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, studentId, courseId, minGrade, minGrade);
         return count != null && count > 0;
     }
 
@@ -280,14 +286,17 @@ public class EnrollmentJDBCRepository {
             Long offeringId,
             List<Enrollment.EnrollmentStatus> statuses
     ){
-        String inClause = String.join(",", statuses.stream().map(s -> "?").toList());
+        if(statuses == null || statuses.isEmpty()) {
+            return Optional.empty();
+        }
 
+        String placeholders = statuses.stream().map(s -> "?").collect(Collectors.joining(","));
         String sql = """
                 SELECT *
                 FROM enrollments
                 WHERE student_id = ?
                     AND offering_id = ?
-                    AND enrollment_status IN (""" + inClause + ")";
+                    AND enrollment_status IN (""" + placeholders + ")";
 
         List<Object> params = new ArrayList<>();
         params.add(studentId);
@@ -339,7 +348,7 @@ public class EnrollmentJDBCRepository {
                     waitlist_position = ?,
                     credits_attempted = ?,
                     enrollment_status = ?
-                WHERE id = ?
+                WHERE enrollment_id = ?
                 """;
 
         jdbcTemplate.batchUpdate(sql, enrollments, enrollments.size(),
@@ -365,7 +374,7 @@ public class EnrollmentJDBCRepository {
         String sql = """
                 SELECT count(*)
                 FROM enrollments
-                WHERE offeringId = ?
+                WHERE offering_id = ?
                 AND enrollment_status in ('ENROLLED', 'WAITLISTED')
                 """;
         Long count = jdbcTemplate.queryForObject(sql, Long.class, offeringId);

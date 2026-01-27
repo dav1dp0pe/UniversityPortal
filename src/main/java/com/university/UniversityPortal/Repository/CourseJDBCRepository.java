@@ -30,7 +30,7 @@ public class CourseJDBCRepository {
     //TODO if we search for a course by id, the corresponding offerings should appear as well
     public Course findCourseById(Long courseId) {
         String sql = "SELECT course_id, course_name, course_code, credit_hours " +
-                     "FROM course WHERE course_id = ?";
+                     "FROM courses WHERE course_id = ?";
         return jdbcTemplate.queryForObject(sql, new CourseRowMapper(), courseId);
     }
 
@@ -88,7 +88,7 @@ public class CourseJDBCRepository {
 
     private void update(Course course) {
         String sql = """
-                UPDATE course
+                UPDATE courses
                 SET course_name = ?,
                 course_code = ?,
                 credit_hours = ?,
