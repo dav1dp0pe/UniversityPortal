@@ -2,6 +2,7 @@ package com.university.UniversityPortal;
 
 import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
 import com.university.UniversityPortal.Domain.Course.Course;
+import com.university.UniversityPortal.Domain.Course.CoursePrerequisites;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
@@ -74,6 +75,8 @@ public class RegistrationServiceIT {
     StudentHoldJDBCRepository studentHoldJDBCRepository;
     @Autowired
     private WishlistJDBCRepository wishlistJDBCRepository;
+    @Autowired
+    CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository;
 
     //
 
@@ -112,6 +115,7 @@ public class RegistrationServiceIT {
         s.setLastName("Doe");
         s.setDateOfBirth(LocalDate.of(2004, 1, 1));
         s.setStatus("ACTIVE");
+        s.setEmail("doej1@example.edu");
         s = studentJDBCRepository.save(s);
 
         Course c = new Course();
@@ -138,7 +142,7 @@ public class RegistrationServiceIT {
         assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isTrue();
 
     }
-/*
+
     @Test
     void register_for_class_whenFull_assignsWaitlist() {
         Student s = new Student();
@@ -146,6 +150,7 @@ public class RegistrationServiceIT {
         s.setLastName("Smith");
         s.setDateOfBirth(LocalDate.of(2003, 5, 15));
         s.setStatus("ACTIVE");
+        s.setEmail("smithj1@example.edu");
         s = studentJDBCRepository.save(s);
 
         Course c = new Course();
@@ -155,8 +160,8 @@ public class RegistrationServiceIT {
         c = courseJDBCRepository.save(c);
 
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(c);
-        offering.setTerm("Fall 2025");
+        offering.setCourseId(c.getCourseId());
+        offering.setSemester("Fall 2025");
         offering.setSection((short) 1);
         offering.setSeatCapacity(1); // Set seat capacity to 1 for testing
         offering = courseOfferingJDBCRepository.save(offering);
@@ -167,6 +172,7 @@ public class RegistrationServiceIT {
         firstStudent.setLastName("Johnson");
         firstStudent.setDateOfBirth(LocalDate.of(2002, 3, 10));
         firstStudent.setStatus("ACTIVE");
+        firstStudent.setEmail("johnsa1@example.com");
         firstStudent = studentJDBCRepository.save(firstStudent);
         registrationService.registerForClass(firstStudent.getStudentId(), offering.getOfferingId());
 
@@ -178,6 +184,7 @@ public class RegistrationServiceIT {
         assertThat(enrollment.getWaitlistPosition()).isEqualTo(1);
     }
 
+
     @Test
     void register_for_class_withoutPrerequisite_throwsException() {
         Student s = new Student();
@@ -185,6 +192,7 @@ public class RegistrationServiceIT {
         s.setLastName("Brown");
         s.setDateOfBirth(LocalDate.of(2001, 7, 20));
         s.setStatus("ACTIVE");
+        s.setEmail("brownb1@example.com");
         s = studentJDBCRepository.save(s);
 
         Course prereqCourse = new Course();
@@ -197,17 +205,29 @@ public class RegistrationServiceIT {
         mainCourse.setCourseName("Advanced Mathematics");
         mainCourse.setCourseCode("MATH-200");
         mainCourse.setCreditHours(3);
-        mainCourse.setPrerequisites(List.of(prereqCourse));
         mainCourse = courseJDBCRepository.save(mainCourse);
 
+        CoursePrerequisites prerequisite = CoursePrerequisites.builder()
+                .courseId(mainCourse.getCourseId())
+                .requiredCourseId(prereqCourse.getCourseId())
+                .prerequisiteType(CoursePrerequisites.PrerequisteType.GRADE)
+                .minGradeValue(1.7)
+                .groupId(1)
+                .build();
+        coursePrerequisiteJDBCRepository.save(prerequisite);
+
         CourseOffering offering = new CourseOffering();
-        offering.setCourse(mainCourse);
-        offering.setTerm("Spring 2026");
+        offering.setCourseId(mainCourse.getCourseId());
+        offering.setSemester("Spring 2026");
         offering.setSection((short) 1);
         offering.setSeatCapacity(30);
         offering = courseOfferingJDBCRepository.save(offering);
 
-      /*  try {
+        long studentId = s.getStudentId();
+        long offeringId = offering.getOfferingId();
+        long beforeEnrollments = enrollmentJDBCRepository.countActiveByOfferingId(offeringId);
+
+        try {
             registrationService.registerForClass(s.getStudentId(), offering.getOfferingId());
         } catch (RuntimeException e) {
             assertThat(e.getMessage()).contains("has not completed prerequisite");
@@ -215,21 +235,20 @@ public class RegistrationServiceIT {
 
 
 
-        long studentId = s.getStudentId();
-        long offeringId = offering.getOfferingId();
-        long beforeEnrollments = enrollmentJDBCRepository.count();
+
         // 5) attempt registration -> should fail
         assertThatThrownBy(() ->
                 registrationService.registerForClass(studentId, offeringId)
         ).isInstanceOf(RuntimeException.class); // or your custom exception type
 
         // 6) verify nothing was created
-        assertThat(enrollmentJDBCRepository.count()).isEqualTo(beforeEnrollments);
-        assertThat(enrollmentJDBCRepository.existsByStudent_StudentIdAndCourseOffering_OfferingId(
+        assertThat(enrollmentJDBCRepository.countActiveByOfferingId(offeringId)).isEqualTo(beforeEnrollments);
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(
                 studentId, offeringId
         )).isFalse();
     }
 
+    /*
     @Test
     void dropClass_whenNotRegistered_throwsException() {
         Student s = new Student();

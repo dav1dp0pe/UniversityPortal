@@ -73,7 +73,7 @@ public class StudentJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"student_id"});
             ps.setString(1, student.getFirstName());
             ps.setString(2, student.getMiddleName());
             ps.setString(3, student.getLastName());
@@ -106,7 +106,12 @@ public class StudentJDBCRepository {
             return ps;
         }, keyHolder);
 
-        Number key = keyHolder.getKey();
+        Number key = null;
+        if (keyHolder.getKeys() != null && keyHolder.getKeys().get("student_id") instanceof Number foundKey) {
+            key = foundKey;
+        } else {
+            key = keyHolder.getKey();
+        }
         if (key != null) {
             student.setStudentId(key.longValue());
         }

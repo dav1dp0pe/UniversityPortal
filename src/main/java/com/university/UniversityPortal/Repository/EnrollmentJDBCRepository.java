@@ -29,7 +29,7 @@ public class EnrollmentJDBCRepository {
                            enrolled_at, dropped_at, grade,
                            last_updated, waitlist_position,
                            credits_attempted, enrollment_status
-                    FROM enrollment
+                    FROM enrollments
             """;
 
     public EnrollmentJDBCRepository(JdbcTemplate jdbcTemplate) {
@@ -53,7 +53,7 @@ public class EnrollmentJDBCRepository {
 
     private Enrollment insert(Enrollment enrollment) {
         String sql = """
-            INSERT INTO enrollment
+            INSERT INTO enrollments
               (student_id, offering_id, enrolled_at, dropped_at, grade,
                last_updated, waitlist_position, credits_attempted, enrollment_status)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -62,13 +62,25 @@ public class EnrollmentJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(conn -> {
-            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = conn.prepareStatement(sql, new String[]{"enrollment_id"});
             ps.setLong(1, enrollment.getStudentId());
             ps.setLong(2, enrollment.getOfferingId());
-            ps.setTimestamp(3, Timestamp.valueOf(enrollment.getEnrolledAt()));
-            ps.setTimestamp(4, Timestamp.valueOf(enrollment.getDroppedAt()));
+            if (enrollment.getEnrolledAt() != null) {
+                ps.setTimestamp(3, Timestamp.valueOf(enrollment.getEnrolledAt()));
+            } else {
+                ps.setNull(3, java.sql.Types.TIMESTAMP);
+            }
+            if (enrollment.getDroppedAt() != null) {
+                ps.setTimestamp(4, Timestamp.valueOf(enrollment.getDroppedAt()));
+            } else {
+                ps.setNull(4, java.sql.Types.TIMESTAMP);
+            }
             ps.setString(5, enrollment.getGrade());
-            ps.setTimestamp(6, Timestamp.valueOf(enrollment.getLastUpdated()));
+            if (enrollment.getLastUpdated() != null) {
+                ps.setTimestamp(6, Timestamp.valueOf(enrollment.getLastUpdated()));
+            } else {
+                ps.setNull(6, java.sql.Types.TIMESTAMP);
+            }
             if (enrollment.getWaitlistPosition() != null) {
                 ps.setInt(7, enrollment.getWaitlistPosition());
             } else {
@@ -87,7 +99,7 @@ public class EnrollmentJDBCRepository {
 
     public void update(Enrollment enrollment) {
         String sql = """
-            UPDATE enrollment
+            UPDATE enrollments
             SET student_id = ?,
                 offering_id = ?,
                 enrolled_at = ?,
@@ -118,7 +130,7 @@ public class EnrollmentJDBCRepository {
     public boolean existsByStudentIdAndOfferingId(Long studentId, Long offeringId) {
         String sql = """
             SELECT COUNT(*)
-            FROM enrollment
+            FROM enrollments
             WHERE student_id = ?
               AND offering_id = ?
             """;
@@ -131,7 +143,7 @@ public class EnrollmentJDBCRepository {
     public long countActiveByOfferingId(long offeringId) {
         String sql = """
             SELECT COUNT(*)
-            FROM enrollment
+            FROM enrollments
             WHERE offering_id = ?
               AND enrollment_status IN ('ENROLLED', 'WAITLISTED')
             """;
@@ -150,7 +162,7 @@ public class EnrollmentJDBCRepository {
 
         String sql = """
             SELECT COUNT(*)
-            FROM enrollment e
+            FROM enrollments e
             JOIN course_offering co ON e.offering_id = co.offering_id
             WHERE e.student_id = ?
               AND e.enrollment_status = 'COMPLETED'
@@ -170,13 +182,29 @@ public class EnrollmentJDBCRepository {
     public long countWaitlistedByOfferingId(long offeringId) {
         String sql = """
                 SELECT COUNT(*)
-                FROM enrollment
+                FROM enrollments
                 WHERE offering_id = ?
                 AND enrollment_status = 'WAITLISTED'
                 """;
 
         Long count = jdbcTemplate.queryForObject(sql, Long.class, offeringId);
         return count != null ? count : 0L;      //returns 0 if nothing exists
+    }
+
+    public boolean hasCompletedCourseWithMinGrade(Long studentId, Long courseId, Double minGrade) {
+        String sql = """
+            SELECT COUNT(*)
+            FROM enrollments e
+            JOIN course_offering co ON e.offering_id = co.offering_id
+            LEFT JOIN grade_weights gw ON e.grade = gw.grade_letter
+            WHERE e.student_id = ?
+              AND co.course_id = ?
+              AND e.enrollment_status = 'COMPLETED'
+              AND (? IS NULL OR gw.weight IS NOT NULL AND gw.weight >= ?)
+            """;
+
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, studentId, courseId, minGrade);
+        return count != null && count > 0;
     }
 
     // JPA: findByStudent_StudentIdAndCourseOffering_OfferingIdAndEnrollmentStatusIn(...)
@@ -256,7 +284,7 @@ public class EnrollmentJDBCRepository {
 
         String sql = """
                 SELECT *
-                FROM enrollment
+                FROM enrollments
                 WHERE student_id = ?
                     AND offering_id = ?
                     AND enrollment_status IN (""" + inClause + ")";
@@ -273,7 +301,7 @@ public class EnrollmentJDBCRepository {
     public Optional<Enrollment> findFirstWaitlistedByOffering(Long offeringId) {
         String sql = """
                 SELECT *
-                FROM enrollment
+                FROM enrollments
                 WHERE offering_id = ?
                     AND enrollment_status = 'WAITLISTED'
                 ORDER BY waitlist_position ASC
@@ -287,7 +315,7 @@ public class EnrollmentJDBCRepository {
     public List<Enrollment> findWaitlistedWithPositionGreaterThan(Long offeringId, int position){
         String sql = """
                 SELECT *
-                FROM enrollment
+                FROM enrollments
                 WHERE offering_id = ?
                     AND enrollment_status = 'WAITLISTED'
                     AND waitlist_position > ?
@@ -297,9 +325,11 @@ public class EnrollmentJDBCRepository {
         return jdbcTemplate.query(sql, rowMapper, offeringId, position);
     }
 
+
+
     public void updateAll(List<Enrollment> enrollments) {
         String sql = """
-                UPDATE enrollment
+                UPDATE enrollments
                 SET student_id = ?,
                     offering_id = ?,
                     enrolled_at = ?,
@@ -330,17 +360,18 @@ public class EnrollmentJDBCRepository {
                     ps.setLong(10, e.getId());
                 });
     }
-/*
-    public int countActiveByOfferingId(Long offeringId){
+
+    public long countActiveByOfferingId(Long offeringId){
         String sql = """
-                SELECT count(e)
-                FROM Enrollment e
-                WHERE e.courseOffering.offeringId = :offeringId
-                AND e.enrollmentStatus in ('ENROLLED', 'WAITLISTED')
+                SELECT count(*)
+                FROM enrollments
+                WHERE offeringId = ?
+                AND enrollment_status in ('ENROLLED', 'WAITLISTED')
                 """;
-        return jdbcTemplate.queryForObject(sql, Integer.class, offeringId);
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, offeringId);
+        return count != null ? count : 0;
     }
-*/
+
     /*
 
     // Custom query to count enrollments by offering ID with specific statuses

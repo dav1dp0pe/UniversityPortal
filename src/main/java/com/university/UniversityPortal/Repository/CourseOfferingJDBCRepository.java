@@ -47,8 +47,7 @@ public class CourseOfferingJDBCRepository {
     public CourseOffering insert(CourseOffering courseOffering){
         String sql = """
                 INSERT INTO course_offering
-                    (offering_id,
-                     course_id,
+                    (course_id,
                      semester,
                      instructor,
                      start_time,
@@ -59,9 +58,9 @@ public class CourseOfferingJDBCRepository {
                      location,
                      seat_capacity,
                      enrolled,
-                     section,
+                     section
                     )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -69,19 +68,18 @@ public class CourseOfferingJDBCRepository {
         jdbcTemplate.update(connection -> {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
-                    ps.setLong(1, courseOffering.getOfferingId());
-                    ps.setLong(2, courseOffering.getCourseId());
-                    ps.setString(3, courseOffering.getSemester());
-                    ps.setString(4, courseOffering.getInstructor());
-                    ps.setString(5, courseOffering.getStartTime());
-                    ps.setString(6, courseOffering.getEndTime());
-                    ps.setString(7, courseOffering.getDaysTaught());
-                    ps.setString(8, courseOffering.getDateRange());
-                    ps.setString(9, courseOffering.getDelivery());
-                    ps.setString(10, courseOffering.getLocation());
-                    ps.setInt(11, courseOffering.getSeatCapacity());
-                    ps.setInt(12, courseOffering.getEnrolled());
-                    ps.setShort(13, courseOffering.getSection());
+                    ps.setLong(1, courseOffering.getCourseId());
+                    ps.setString(2, courseOffering.getSemester());
+                    ps.setString(3, courseOffering.getInstructor());
+                    ps.setString(4, courseOffering.getStartTime());
+                    ps.setString(5, courseOffering.getEndTime());
+                    ps.setString(6, courseOffering.getDaysTaught());
+                    ps.setString(7, courseOffering.getDateRange());
+                    ps.setString(8, courseOffering.getDelivery());
+                    ps.setString(9, courseOffering.getLocation());
+                    ps.setInt(10, courseOffering.getSeatCapacity());
+                    ps.setInt(11, courseOffering.getEnrolled());
+                    ps.setShort(12, courseOffering.getSection());
                     return ps;
                 }, keyHolder);
 
@@ -98,8 +96,7 @@ public class CourseOfferingJDBCRepository {
     public void update(CourseOffering courseOffering){
         String sql = """
                 UPDATE course_offering
-                SET offering_id = ?,
-                    course_id = ?,
+                SET course_id = ?,
                     semester = ?,
                     section = ?,
                     instructor = ?,
@@ -116,7 +113,6 @@ public class CourseOfferingJDBCRepository {
                 """;
 
         jdbcTemplate.update(sql,
-                courseOffering.getOfferingId(),
                 courseOffering.getCourseId(),
                 courseOffering.getSemester(),
                 courseOffering.getInstructor(),
@@ -129,5 +125,6 @@ public class CourseOfferingJDBCRepository {
                 courseOffering.getSeatCapacity();
                 courseOffering.getEnrolled();
                 courseOffering.getSection();
+                courseOffering.getOfferingId();
     }
 }

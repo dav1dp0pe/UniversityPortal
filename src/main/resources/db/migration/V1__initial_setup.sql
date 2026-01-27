@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS enrollments (
     grade VARCHAR(2),
     last_updated TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     enrollment_status VARCHAR(20),
+    waitlist_position INT,
+    credits_attempted INT DEFAULT 0,
     CONSTRAINT fk_enroll_student FOREIGN KEY (student_id) REFERENCES students(student_id),
     CONSTRAINT fk_enroll_offering FOREIGN KEY (offering_id) REFERENCES course_offering(offering_id),
     UNIQUE (student_id, offering_id)

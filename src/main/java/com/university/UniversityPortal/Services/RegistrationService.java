@@ -2,6 +2,7 @@ package com.university.UniversityPortal.Services;
 
 import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
 import com.university.UniversityPortal.Domain.Course.Course;
+import com.university.UniversityPortal.Domain.Course.CoursePrerequisites;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 //TODO: add @transactional where needed
 //TODO: replace repository call with DAO methods that use SQL
@@ -28,17 +31,19 @@ public class RegistrationService {
     private final StudentHoldJDBCRepository studentHoldJDBCRepository;
     private final WishlistJDBCRepository wishlistJDBCRepository;
     private final CourseJDBCRepository courseJDBCRepository;
+    private final CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository;
 
     //constructor
     public RegistrationService(EnrollmentJDBCRepository enrollmentJDBCRepository,
                                StudentJDBCRepository studentJDBCRepository,
-                               CourseOfferingJDBCRepository courseOfferingJDBCRepository, StudentHoldJDBCRepository studentHoldJDBCRepository, WishlistJDBCRepository wishlistJDBCRepository, CourseJDBCRepository courseJDBCRepository) {
+                               CourseOfferingJDBCRepository courseOfferingJDBCRepository, StudentHoldJDBCRepository studentHoldJDBCRepository, WishlistJDBCRepository wishlistJDBCRepository, CourseJDBCRepository courseJDBCRepository, CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository) {
         this.enrollmentJDBCRepository = enrollmentJDBCRepository;
         this.studentJDBCRepository = studentJDBCRepository;
         this.courseOfferingJDBCRepository = courseOfferingJDBCRepository;
         this.studentHoldJDBCRepository = studentHoldJDBCRepository;
         this.wishlistJDBCRepository = wishlistJDBCRepository;
         this.courseJDBCRepository = courseJDBCRepository;
+        this.coursePrerequisiteJDBCRepository = coursePrerequisiteJDBCRepository;
     }
 
     //TODO perform integration test
@@ -129,14 +134,18 @@ public class RegistrationService {
         //TODO prerequisites looks sus
         //6. Prerequisites check
         Long courseId = offering.getCourseId();
-        List<Long> prerequisiteIds = courseJDBCRepository.findPrerequisiteCourseIds(courseId);
+        List<CoursePrerequisites> prerequisites = coursePrerequisiteJDBCRepository.findByCourseId(courseId);
 
         //TODO: later, implement logic to check student's grade for course
-        if(!prerequisiteIds.isEmpty()) {
-            long completedCount = enrollmentJDBCRepository.countCompletedCourses(studentId, prerequisiteIds);
+        if(!prerequisites.isEmpty()) {
+            Map<Integer, List<CoursePrerequisites>> grouped = prerequisites.stream().collect(Collectors.groupingBy(CoursePrerequisites::getGroupId));
+            for (List<CoursePrerequisites> group : grouped.values()) {
+                boolean satisfied = group.stream()
+                        .anyMatch(prereq -> hasSatisfiedPrerequisite(studentId, prereq));
 
-            if(completedCount != prerequisiteIds.size()) {
-                throw new RuntimeException("student " + studentId + " has not completed all prerequisites for course " + courseId);
+                if (!satisfied) {
+                    throw new RuntimeException("student " + studentId + " has not completed all prerequisites for course " + courseId);
+                }
             }
         }
 
@@ -161,6 +170,25 @@ public class RegistrationService {
 
         return enrollmentJDBCRepository.save(e);
     }
+
+    private boolean hasSatisfiedPrerequisite(Long studentId, CoursePrerequisites prerequisite) {
+        CoursePrerequisites.PrerequisteType type = prerequisite.getPrerequisiteType();
+        if (type == CoursePrerequisites.PrerequisteType.COURSE) {
+            return enrollmentJDBCRepository.hasCompletedCourseWithMinGrade(
+                    studentId,
+                    prerequisite.getRequiredCourseId(),
+                    null);
+        }
+
+        if (type == CoursePrerequisites.PrerequisteType.GRADE) {
+            return enrollmentJDBCRepository.hasCompletedCourseWithMinGrade(
+                    studentId,
+                    prerequisite.getRequiredCourseId(),
+                    prerequisite.getMinGradeValue());
+        }
+        return false;
+    }
+
 
     //TODO: Map invalid dropped class to 400 or 409 error with an exception handler
     @Transactional
