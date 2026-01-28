@@ -43,6 +43,12 @@ public class EnrollmentJDBCRepository {
         return result.stream().findFirst();
     }
 
+    public int count(){
+        String sql = "SELECT COUNT(*) FROM enrollments";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count != null ? count : 0;
+    }
+
     public Enrollment save(Enrollment enrollment) {
         if (enrollment.getId() == null) {
             return insert(enrollment);

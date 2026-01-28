@@ -32,7 +32,10 @@ public class WishlistJDBCRepository {
     }
     */
 
-
+    public Long count(){
+        String sql = "SELECT COUNT(*) FROM wishlist";
+        return jdbcTemplate.queryForObject(sql, Long.class);
+    }
     public boolean existsByStudentIdAndOfferingId(Long studentId, Long offeringId) {
         String sql = """
                 SELECT COUNT(*)
@@ -54,7 +57,7 @@ public class WishlistJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"wishlist_id"});
 
             ps.setLong(1, item.getStudentId());
             ps.setLong(2, item.getOfferingId());
@@ -78,17 +81,17 @@ public class WishlistJDBCRepository {
         return jdbcTemplate.update(sql, studentId, offeringId); //return number of rows deleted
     }
 
-    public List<Wishlist> findByStudentIdAndTerm(Long studentId, String term){
+    public List<Wishlist> findByStudentIdAndTerm(Long studentId, String semester){
         String sql = """
                 SELECT w.wishlist_id, w.student_id, w.offering_id, w.added_at
                 FROM wishlist w
                 JOIN course_offering co
                 ON w.offering_id = co.offering_id
                 WHERE w.student_id = ?
-                AND co.term = ?
+                AND co.semester = ?
                 """;
 
-        return jdbcTemplate.query(sql, rowMapper, studentId, term);
+        return jdbcTemplate.query(sql, rowMapper, studentId, semester);
     }
     /*
     TODO: implement these methods:

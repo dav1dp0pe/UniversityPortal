@@ -67,12 +67,13 @@ CREATE TABLE IF NOT EXISTS course_offering(
     );
 
 CREATE TABLE IF NOT EXISTS wishlist (
-    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    wishlist_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     student_id BIGINT NOT NULL,
     offering_id BIGINT NOT NULL,
     added_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_wishlist_student FOREIGN KEY (student_id) REFERENCES students(student_id),
-    CONSTRAINT fk_wishlist_offering FOREIGN KEY (offering_id) REFERENCES course_offering(offering_id)
+    CONSTRAINT fk_wishlist_offering FOREIGN KEY (offering_id) REFERENCES course_offering(offering_id),
+    CONSTRAINT unique_wishlist_entry UNIQUE (student_id, offering_id)
     );
 
 -- requirement_id BIGINT REFERENCES requirements(requirement_id), TODO: we need this to potentially link to a requirements table in the future
