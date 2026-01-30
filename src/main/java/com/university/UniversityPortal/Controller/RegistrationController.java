@@ -41,8 +41,8 @@ public class RegistrationController {
         return ResponseEntity.ok(new EnrollmentResponse(
                 enrollment.getId(),
                 enrollment.getEnrollmentStatus().name(),        //TODO: check if name() is appropriate here, or if we need id instead
-                enrollment.getStudent().getStudentId(),
-                enrollment.getCourseOffering().getOfferingId()));
+                enrollment.getStudentId(),
+                enrollment.getOfferingId()));
     }
 
     //post mapping for dropping classes
@@ -53,8 +53,8 @@ public class RegistrationController {
         return ResponseEntity.ok(new EnrollmentResponse(
                 enrollment.getId(),
                 enrollment.getEnrollmentStatus().name(),        //TODO: check if name() is appropriate here, or if we need id instead
-                enrollment.getStudent().getStudentId(),
-                enrollment.getCourseOffering().getOfferingId()));
+                enrollment.getStudentId(),
+                enrollment.getOfferingId()));
     }
 
     //post mapping to add wishlist classes

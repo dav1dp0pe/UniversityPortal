@@ -1,42 +1,51 @@
 package com.university.UniversityPortal.Domain.CourseOffering;
 
-import com.university.UniversityPortal.Domain.Course.Course;
-import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.util.List;
-
-@Entity
+//@Entity
 @Data
-@Table(
-        name = "course_offering",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"course_id", "term", "section"} )
-)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@Table(
+//        name = "course_offering",
+ //       uniqueConstraints = @UniqueConstraint(columnNames = {"course_id", "term", "section"} )
+//)
 public class CourseOffering {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    //TODO:
+    // is offeringId and section redundant???
     private Long offeringId;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "course_id", nullable = false)
-    private Course course;
+    //@ManyToOne(optional = false)
+    //@JoinColumn(name = "course_id", nullable = false)
+    private Long courseId;
 
-    @Column(nullable = false)
-    private String term;        //Spring 2026, Fall 2025, Summer 2026
+    //@Column(nullable = false)
+    private String semester;        //Spring 2026, Fall 2025, Summer 2026
 
-    @Column(nullable = false)
-    private short section;      // e.g., 1, 2, 3 for different sections of the same course in a term
+    private String instructor;
 
-    @Column(nullable = false)
-    private int seatCapacity;
-
-    private String instructorName;
-    private String days;
     private String startTime;
     private String endTime;
-    private String room;
+    private String daysTaught;
+    private String dateRange;
+    private String delivery;
+    private String location;
+    private int seatCapacity;
+    private int enrolled;
+    private short section;      // e.g., 1, 2, 3 for different sections of the same course in a term
 
-    @OneToMany(mappedBy = "courseOffering")
-    private List<Enrollment> enrollments;
+
+
+    // @Column(nullable = false)
+
+   // @Column(nullable = false)
+   // @OneToMany(mappedBy = "courseOffering")
+    //TODO, change enrollments list???
+    //private List<Enrollment> enrollments;
 }

@@ -5,31 +5,37 @@ package com.university.UniversityPortal.Domain.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 //unique constraint to prevent duplicate enrollments for the same student in the same course and term
-@Entity
+//@Entity
 @Data
-@Table(name = "enrollment",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "offering_id"}))
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@Table(name = "enrollment",
+//        uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "offering_id"}))
 public class Enrollment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+ //   @Id
+ //   @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     //many enrollments can belong to one student
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "student_id")
-    private Student student;
+ //   @ManyToOne(optional = false)
+ //   @JoinColumn(name = "student_id")
+    private Long studentId;
 
     //many enrollments can belong to one course
-    @ManyToOne
-    @JoinColumn(name = "offering_id", nullable = false)
-    private CourseOffering courseOffering;
+ //   @ManyToOne
+ //   @JoinColumn(name = "offering_id", nullable = false)
+    private Long offeringId;
 
     //private String term;  //Fall 2025, Spring 2026, Summer
 
@@ -51,6 +57,6 @@ public class Enrollment {
         COMPLETED
     }
 
-    @Enumerated(EnumType.STRING)
+ //   @Enumerated(EnumType.STRING)
     private EnrollmentStatus enrollmentStatus;
 }

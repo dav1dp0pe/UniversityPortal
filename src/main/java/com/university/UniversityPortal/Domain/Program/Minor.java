@@ -1,15 +1,19 @@
 package com.university.UniversityPortal.Domain.Program;
 
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 //declare Major class as an entity so that it can be mapped to a database table
-@Entity
 @Data
-@Table(name = "minor")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Minor {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+   // @Id
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;

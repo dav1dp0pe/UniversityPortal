@@ -1,26 +1,32 @@
 package com.university.UniversityPortal.Domain.Student;
 
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
-import com.university.UniversityPortal.Domain.Program.Major;
+import com.university.UniversityPortal.Domain.Program.AcademicProgram;
 import com.university.UniversityPortal.Domain.Program.Minor;
 import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
-@Entity
+//@Entity
 @Data
-@Table(name = "students")
+@NoArgsConstructor      //initializes an object using default values
+@AllArgsConstructor     //automatically generates a constructor for Java class that includes parameters for every field
+@Builder
+//@Table(name = "students")
 
 public class Student {
 
-    //use Identity to force the database's auto increment feature
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long studentId;
+    //maps to students
+    private Long studentId;
 
     private String firstName;
     private String middleName;
@@ -47,7 +53,13 @@ public class Student {
 
     private float gpa;
     private int creditsCompleted;
+    private int creditsAttempted;
 
+    private AcademicProgram major;
+    private AcademicProgram minor;
+    private LocalDateTime createdAt;
+
+    /*
     //one student can have many enrollments
     @OneToMany(mappedBy = "student")
     private List<Enrollment> enrollments;
@@ -71,5 +83,5 @@ public class Student {
     @JoinColumn(name = "minor_id")
     private Minor minor;
 
-
+*/
 }

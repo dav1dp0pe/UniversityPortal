@@ -1,44 +1,36 @@
 package com.university.UniversityPortal.Domain.Course;
 
-import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
-import jakarta.persistence.*;
+//import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
-@Entity
+//@Entity
 @Data
-@Table(name = "courses")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 
 public class Course {
 
-    //use Identity to force the database's auto increment feature
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    //maps to courses.course_id (auto-increment in DB)
     private Long courseId;
-
     private String courseName;
     private String courseCode;
-    //private int seatCapacity;
-    //private int section;
-    //private short sectionNumber;
-    //private String term;  //Fall, Spring, Summer
     private int creditHours;
+    private String semestersTaught;
+    private String program;     //undergraduate, graduate, certificate
+    private String department;
+    private String description;
+    private boolean repeatable;
+    private boolean placementExamAvailable;
+    private String generalEducationCourse;
 
-
-
-    //one course can have many enrollments
-   /* @OneToMany(mappedBy = "course")
-    private List<Enrollment> enrollments; */
-
-    // Add a field for prerequisites
-    @ManyToMany
-    @JoinTable(
-            name = "course_prerequisites",
-            joinColumns = @JoinColumn(name = "course_id"),
-            inverseJoinColumns = @JoinColumn(name = "prerequisite_id")
-    )
-    private List<Course> prerequisites;
+    //TODO
+    // Not auto-mapped; you'd fill this by calling another repository method
+    // after loading the Course itself.
+    // private List<CoursePrerequisites> prerequisites = new ArrayList<>();
 }
 
 //TODO: Decide how a course becomes "Completed" - Is it through Enrollment status or CourseOffering?
