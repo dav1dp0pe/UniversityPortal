@@ -1,6 +1,6 @@
 package com.university.UniversityPortal.Services;
 
-import com.university.UniversityPortal.Repository.StudentJDBCRepository;
+import com.university.UniversityPortal.Repository.StudentRepository.StudentJDBCRepository;
 //import com.university.UniversityPortal.Repository.StudentRepository;
 import org.springframework.stereotype.Service;
 

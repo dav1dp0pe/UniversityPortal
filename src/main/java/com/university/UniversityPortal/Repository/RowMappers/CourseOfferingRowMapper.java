@@ -1,4 +1,4 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.RowMappers;
 
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import org.springframework.jdbc.core.RowMapper;

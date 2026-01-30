@@ -1,12 +1,10 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.StudentRepository;
 
-import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Timestamp;
-import java.util.Optional;
 
 @Repository
 public class StudentHoldJDBCRepository {

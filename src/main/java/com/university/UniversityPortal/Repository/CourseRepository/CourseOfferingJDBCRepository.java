@@ -1,6 +1,7 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.CourseRepository;
 
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
+import com.university.UniversityPortal.Repository.RowMappers.CourseOfferingRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;

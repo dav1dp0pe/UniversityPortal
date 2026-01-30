@@ -1,6 +1,7 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.StudentRepository;
 
 import com.university.UniversityPortal.Domain.Student.Student;
+import com.university.UniversityPortal.Repository.RowMappers.StudentRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 

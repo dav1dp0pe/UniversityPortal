@@ -1,15 +1,14 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.EnrollmentRepository;
 
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment.EnrollmentStatus;
+import com.university.UniversityPortal.Repository.RowMappers.EnrollmentRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;

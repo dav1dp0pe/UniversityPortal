@@ -1,4 +1,4 @@
-package com.university.UniversityPortal.Repository;
+package com.university.UniversityPortal.Repository.CourseRepository;
 
 import com.university.UniversityPortal.Domain.Course.CoursePrerequisites;
 import org.springframework.jdbc.core.JdbcTemplate;
