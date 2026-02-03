@@ -506,6 +506,43 @@ public class RegistrationServiceIT {
 
     }
 
+    @Test
+    void searchCourseOfferings_bySemesterAndCourseCode_returnsResults() {
+        Course c1 = createAndSaveCourse("Calculus I", "MAT-101", 4);
+        Course c2 = createAndSaveCourse("Calculus II", "MAT-102", 4);
+
+        CourseOffering offering1 = createAndSaveCourseOffering(c1.getCourseId(), "Fall 2025", (short) 1, 30);
+        CourseOffering offering2 = createAndSaveCourseOffering(c2.getCourseId(), "Fall 2025", (short) 1, 30);
+        CourseOffering offering3 = createAndSaveCourseOffering(c1.getCourseId(), "Spring 2026", (short) 1, 30);
+
+        var results = registrationService.searchOfferingsBySemesterAndCourseCode("Fall 2025", "MAT-101");
+
+        System.out.println(results);
+
+        assertThat(results.size()).isEqualTo(1);
+        assertThat(results.get(0).getCourseCode()).isEqualTo("MAT-101");
+        assertThat(results.get(0).getSemester()).isEqualTo("Fall 2025");
+    }
+
+    @Test
+    void searchCourseOfferings_bySemesterAndDepartment_returnsResults() {
+        Course c1 = createAndSaveCourse("Calculus I", "MAT-101", 4);
+        Course c2 = createAndSaveCourse("Calculus II", "MAT-102", 4);
+
+        CourseOffering offering1 = createAndSaveCourseOffering(c1.getCourseId(), "Fall 2025", (short) 1, 30);
+        CourseOffering offering2 = createAndSaveCourseOffering(c2.getCourseId(), "Fall 2025", (short) 1, 30);
+        CourseOffering offering3 = createAndSaveCourseOffering(c1.getCourseId(), "Spring 2026", (short) 1, 30);
+
+        var results = registrationService.searchOfferingsBySemesterAndCourseCode("Fall 2025", "MAT");
+
+        System.out.println(results);
+
+        assertThat(results.size()).isEqualTo(2);
+        assertThat(results.get(0).getCourseCode()).isEqualTo("MAT-101");
+        assertThat(results.get(1).getCourseCode()).isEqualTo("MAT-102");
+        assertThat(results.get(0).getSemester()).isEqualTo("Fall 2025");
+    }
+
 
     private Student createAndSaveStudent(String firstName, String lastName, LocalDate dob, String status, String email) {
         Student s = new Student();

@@ -1,9 +1,7 @@
 package com.university.UniversityPortal.Controller;
 
-import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
-import com.university.UniversityPortal.Controller.dto.DropRequest;
-import com.university.UniversityPortal.Controller.dto.EnrollmentResponse;
-import com.university.UniversityPortal.Controller.dto.RegisterRequest;
+import com.university.UniversityPortal.Controller.dto.*;
+import com.university.UniversityPortal.Domain.CourseOffering.CourseOfferingSearchResult;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import com.university.UniversityPortal.Services.RegistrationService;
@@ -13,9 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/registrations")
+@RequestMapping("/api/registration")
 @RequiredArgsConstructor
 public class RegistrationController {
 
@@ -32,10 +31,23 @@ public class RegistrationController {
         return "registration";
     }
 */
+
+    //get mapping for a student looking up a course's offerings for that semester
+    @GetMapping("/offerings")
+    public List<CourseOfferingSearchResponse> searchCourseOfferings(
+            @RequestParam String semester,
+            @RequestParam String courseCode){
+
+        List<CourseOfferingSearchResult> results = registrationService.searchOfferingsBySemesterAndCourseCode(semester, courseCode);
+        return results.stream().map(this::toCourseOfferingSearchResponse).toList();
+
+    }
+
     //post mapping for registering for classes
     //@PostMapping("/students/{studentId}/enrollments")
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<EnrollmentResponse> register(@RequestBody RegisterRequest request) {
+
         Enrollment enrollment = registrationService.registerForClass(request.studentId(), request.offeringId());
         // Implementation for registering a student for a class
         return ResponseEntity.ok(new EnrollmentResponse(
@@ -43,6 +55,7 @@ public class RegistrationController {
                 enrollment.getEnrollmentStatus().name(),        //TODO: check if name() is appropriate here, or if we need id instead
                 enrollment.getStudentId(),
                 enrollment.getOfferingId()));
+
     }
 
     //post mapping for dropping classes
@@ -75,4 +88,22 @@ public class RegistrationController {
     }
 
 
+    private CourseOfferingSearchResponse toCourseOfferingSearchResponse(CourseOfferingSearchResult result) {
+        return CourseOfferingSearchResponse.builder()
+                .offeringId(result.getOfferingId())
+                .courseId(result.getCourseId())
+                .courseCode(result.getCourseCode())
+                .courseName(result.getCourseName())
+                .semester(result.getSemester())
+                .instructor(result.getInstructor())
+                .startTime(result.getStartTime())
+                .endTime(result.getEndTime())
+                .daysTaught(result.getDaysTaught())
+                .delivery(result.getDelivery())
+                .location(result.getLocation())
+                .seatCapacity(result.getSeatCapacity())
+                .enrolled(result.getEnrolled())
+                .section(result.getSection())
+                .build();
+    }
 }

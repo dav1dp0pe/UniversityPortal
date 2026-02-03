@@ -1,5 +1,12 @@
 ### Registration API Test Requests
-POST http://localhost:8080/api/registration/register
+
+### 1. Get available course offerings for a semester
+GET http://localhost:8090/api/registration/offerings?semester=Spring%2026&courseCode=CSC
+Authorization: Basic user 69dd5140-0a36-44d7-a7f2-3297830bcd1a
+Accept: application/json
+
+
+POST http://localhost:8090/api/registration/register
 Content-Type: application/json
 
 {
@@ -9,7 +16,7 @@ Content-Type: application/json
 
 ### TODO: Test this endpoint
 ### Drop a course
-POST http://localhost:8080/api/registration/drop
+POST http://localhost:8090/api/registration/drop
 Content-Type: application/json
 
 {

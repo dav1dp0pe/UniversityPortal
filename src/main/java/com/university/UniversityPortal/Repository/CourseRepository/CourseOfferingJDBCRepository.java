@@ -1,6 +1,7 @@
 package com.university.UniversityPortal.Repository.CourseRepository;
 
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
+import com.university.UniversityPortal.Domain.CourseOffering.CourseOfferingSearchResult;
 import com.university.UniversityPortal.Repository.RowMappers.CourseOfferingRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -43,6 +44,57 @@ public class CourseOfferingJDBCRepository {
             update(courseOffering);
             return courseOffering;
         }
+    }
+
+    public List<CourseOfferingSearchResult> findOfferingsByTermAndCoursePrefix(String semester, String courseCodePrefix){
+        String sql = """
+                SELECT co.offering_id,
+                       co.course_id,
+                       co.semester,
+                       co.instructor,
+                       co.start_time,
+                       co.end_time,
+                       co.days_taught,
+                       co.date_range,
+                       co.delivery,
+                       co.location,
+                       co.seat_capacity,
+                       co.enrolled,
+                       co.section,
+                       c.course_code,
+                       c.course_name
+                FROM course_offering co
+                JOIN courses c ON c.course_id = co.course_id
+                WHERE co.semester = ?
+                  AND c.course_code LIKE ?
+                ORDER BY c.course_code, co.section
+                """;
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> CourseOfferingSearchResult.builder()
+                        .offeringId(rs.getLong("offering_id"))
+                        .courseId(rs.getLong("course_id"))
+                        .semester(rs.getString("semester"))
+                        .instructor(rs.getString("instructor"))
+                        .startTime(rs.getString("start_time"))
+                        .endTime(rs.getString("end_time"))
+                        .daysTaught(rs.getString("days_taught"))
+                        .dateRange(rs.getString("date_range"))
+                        .delivery(rs.getString("delivery"))
+                        .location(rs.getString("location"))
+                        .seatCapacity(rs.getInt("seat_capacity"))
+                        .enrolled(rs.getInt("enrolled"))
+                        .section(rs.getShort("section"))
+                        .courseCode(rs.getString("course_code"))
+                        .courseName(rs.getString("course_name"))
+                        .build(),
+                    semester, courseCodePrefix
+        );
+
+            // You can also set course code and name if needed
+            // offering.setCourseCode(rs.getString("course_code"));
+            // offering.setCourseName(rs.getString("course_name"));
     }
 
     public CourseOffering insert(CourseOffering courseOffering){

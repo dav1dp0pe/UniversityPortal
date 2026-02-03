@@ -4,6 +4,7 @@ import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
 import com.university.UniversityPortal.Domain.Course.Course;
 import com.university.UniversityPortal.Domain.Course.CoursePrerequisites;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
+import com.university.UniversityPortal.Domain.CourseOffering.CourseOfferingSearchResult;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import com.university.UniversityPortal.Repository.CourseRepository.CourseJDBCRepository;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,6 +54,7 @@ public class RegistrationService {
     }
 
     //TODO perform integration test
+    //add offering to student's wishlist
     @Transactional
     public Wishlist addToWishlist(Long studentId, long offeringId) {
 
@@ -63,7 +66,7 @@ public class RegistrationService {
         courseOfferingJDBCRepository.findByOfferingId(offeringId)
                 .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
 
-        //3. check if already in wishlist
+        //3. check if that offering is already in wishlist
         //TODO change this to be JDBC instead of JPA
         if(wishlistJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
             throw new RuntimeException("student " + studentId + " already has offering " + offeringId + " in wishlist");
@@ -79,6 +82,7 @@ public class RegistrationService {
     }
 
     //TODO perform integration test
+    //remove offering from student's wishlist
     @Transactional
     public void removeFromWishlist(Long studentId, long offeringId) {
         //find wishlist record
@@ -90,6 +94,7 @@ public class RegistrationService {
     }
 
     //TODO perform integration test
+    //register all classes from wishlist for a given term
     @Transactional
     public List<BatchRegistrationResult> registerAllFromWishlist(Long studentId, String term) {
 
@@ -271,6 +276,24 @@ public class RegistrationService {
         return enrollment;
     }
 
+
+    //get course offerings for a student in a given term based on the course code they type in
+    //(E.g., student searches for "CSC-101", return all offerings for that course in that term)
+    //(E.g., student searches for "CSC", return all offerings for that department in that term)
+    public List<CourseOfferingSearchResult> searchOfferingsBySemesterAndCourseCode(String semester, String courseCode) {
+        if (semester == null || semester.isBlank()) {
+            throw new RuntimeException("Semester is required for searching course offerings.");
+        }
+
+        if (courseCode == null || courseCode.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        String normalizedQuery = courseCode.trim().toUpperCase();
+        String prefix = normalizedQuery + "%";
+
+        return courseOfferingJDBCRepository.findOfferingsByTermAndCoursePrefix(semester, prefix);
+    }
     //TODO add wishlist helper method?
     //  public List<Wishlist> getWishlistsForStudent(Long studentId) {
     //    return wishlistJdbcRepository.findByStudentId(studentId);
