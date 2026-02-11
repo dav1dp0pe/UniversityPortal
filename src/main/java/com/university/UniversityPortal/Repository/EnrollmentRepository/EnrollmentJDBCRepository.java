@@ -57,6 +57,18 @@ public class EnrollmentJDBCRepository {
         }
     }
 
+    public Enum getEnrollmentStatusByStudentId(Long studentId, Long enrollmentId){
+        String sql = """
+                SELECT enrollment_status
+                FROM enrollments
+                WHERE student_id = ?
+                AND enrollment_id = ?
+                """;
+
+        List<String> result = jdbcTemplate.queryForList(sql, String.class, studentId, enrollmentId);
+        return result.stream().findFirst().map(EnrollmentStatus::valueOf).orElse(null);
+    }
+
     private Enrollment insert(Enrollment enrollment) {
         String sql = """
             INSERT INTO enrollments

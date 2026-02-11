@@ -14,11 +14,7 @@ public class WishlistRowMapper implements RowMapper<Wishlist> {
     Wishlist wishlist = new Wishlist();
     wishlist.setWishlistId(rs.getLong("wishlist_id"));
     wishlist.setStudentId(rs.getLong("student_id"));
-    wishlist.setOfferingId(rs.getLong("offering_id"));
-    Timestamp ts = rs.getTimestamp("added_at");
-    if (ts != null) {
-        wishlist.setAddedAt(ts.toLocalDateTime());
-    }
+    wishlist.setSemester(rs.getString("semester"));
     return wishlist;
     }
 

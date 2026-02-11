@@ -8,10 +8,12 @@ import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Student.Student;
 import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
+import com.university.UniversityPortal.Domain.Wishlist.WishlistItem;
 import com.university.UniversityPortal.Repository.CourseRepository.CourseJDBCRepository;
 import com.university.UniversityPortal.Repository.CourseRepository.CourseOfferingJDBCRepository;
 import com.university.UniversityPortal.Repository.CourseRepository.CoursePrerequisiteJDBCRepository;
-import com.university.UniversityPortal.Repository.CourseRepository.WishlistJDBCRepository;
+import com.university.UniversityPortal.Repository.WishlistRepository.WishlistItemJDBCRepository;
+import com.university.UniversityPortal.Repository.WishlistRepository.WishlistJDBCRepository;
 import com.university.UniversityPortal.Repository.EnrollmentRepository.EnrollmentJDBCRepository;
 import com.university.UniversityPortal.Repository.StudentRepository.StudentHoldJDBCRepository;
 import com.university.UniversityPortal.Repository.StudentRepository.StudentJDBCRepository;
@@ -80,6 +82,8 @@ public class RegistrationServiceIT {
     private WishlistJDBCRepository wishlistJDBCRepository;
     @Autowired
     CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository;
+    @Autowired
+    WishlistItemJDBCRepository wishlistItemJDBCRepository;
 
     //
 
@@ -359,11 +363,14 @@ public class RegistrationServiceIT {
 
         assertThat(item.getWishlistId()).isNotNull();
         assertThat(item.getStudentId()).isEqualTo(s.getStudentId());
-        assertThat(item.getOfferingId()).isEqualTo(offering.getOfferingId());
+
+        //assert that the offering is in the wishlist items for that wishlist
+
+        //assertThat(item.getItems().equals(offering.getOfferingId()));
 
         assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeWishlistCount + 1);
 
-        assertThat(wishlistJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isTrue();
+        assertThat(wishlistItemJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isTrue();
     }
 
     @Test
@@ -374,19 +381,20 @@ public class RegistrationServiceIT {
 
         CourseOffering offering = createAndSaveCourseOffering(c.getCourseId(), "Fall 2025", (short) 1, 30);
 
-        long beforeCount = wishlistJDBCRepository.count();
-        assertThat(beforeCount).isEqualTo(0);
+        long initialCount = wishlistJDBCRepository.count();
+        assertThat(initialCount).isEqualTo(0);
 
         Wishlist item = registrationService.addToWishlist(s.getStudentId(), offering.getOfferingId());
         assertThat(item.getWishlistId()).isNotNull();
+        assertThat(wishlistJDBCRepository.count()).isEqualTo(1);
 
-        assertThat(wishlistJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isTrue();
-        assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeCount + 1);
+        assertThat(wishlistItemJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isTrue();
+        assertThat(wishlistItemJDBCRepository.countByStudentIdAndSemester(s.getStudentId(), offering.getSemester())).isEqualTo(1);
 
         registrationService.removeFromWishlist(s.getStudentId(), offering.getOfferingId());
 
-        assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeCount);
-        assertThat(wishlistJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isFalse();
+        assertThat(wishlistItemJDBCRepository.countByStudentIdAndSemester(s.getStudentId(), offering.getSemester())).isEqualTo(initialCount);
+        assertThat(wishlistItemJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering.getOfferingId())).isFalse();
     }
 
     @Test
@@ -415,7 +423,7 @@ public class RegistrationServiceIT {
         registrationService.addToWishlist(s.getStudentId(), offering2.getOfferingId());
         registrationService.addToWishlist(s.getStudentId(), offering3.getOfferingId());
 
-        assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeWishlistCount + 3);
+        assertThat(wishlistJDBCRepository.count()).isEqualTo(beforeWishlistCount + 1);
 
         //register all from wishlist
         var results = registrationService.registerAllFromWishlist(s.getStudentId(), "Fall 2025");
@@ -436,24 +444,73 @@ public class RegistrationServiceIT {
         //verify there are 3 new enrollments
         long beforeEnrollments = enrollmentJDBCRepository.count() - 3;
         assertThat(enrollmentJDBCRepository.count()).isEqualTo(beforeEnrollments + 3);
+
+        //verify there are 3 courses in the wishlist, and they are all marked as processed
+        assertThat(wishlistItemJDBCRepository.countByStudentIdAndSemester(s.getStudentId(), "Fall 2025")).isEqualTo(3);
     }
 
     //TODO implement these tests
     @Test
     void registerAllFromWishlist_1CourseFails_othersSucceed(){
+        //student and course creation
         Student s = createAndSaveStudent("Partial", "Success", LocalDate.of(1996, 6, 6), "ACTIVE", "partial1@example.edu");
+        Student s2 = createAndSaveStudent("Dummy", "Fail", LocalDate.of(1995, 5, 5), "ACTIVE", "dummy1@nku.edu");
 
         Course c1 = createAndSaveCourse("Anthropology 101", "ANTH-101", 3);
         CourseOffering offering1 = createAndSaveCourseOffering(c1.getCourseId(), "Fall 2025", (short) 1, 30);
 
         Course c2 = createAndSaveCourse("Geography 101", "GEO-101", 3);
-        CourseOffering offering2 = createAndSaveCourseOffering(c2.getCourseId(), "Fall 2025", (short) 1, 0); //full course to cause failure
+        CourseOffering offering2 = createAndSaveCourseOffering(c2.getCourseId(), "Fall 2025", (short) 1, 1); //full course to cause failure
 
-        Course c3 = createAndSaveCourse("Political Science 101", "POL-101", 3);
+        Course prereqCourse = createAndSaveCourse("Political Science 101", "POL-101", 3);
+
+        Course c3 = createAndSaveCourse("Political Science 201", "POL-201", 3);
         CourseOffering offering3 = createAndSaveCourseOffering(c3.getCourseId(), "Fall 2025", (short) 1, 30);
 
+        CoursePrerequisites prerequisite = CoursePrerequisites.builder()
+                .courseId(c3.getCourseId())
+                .requiredCourseId(prereqCourse.getCourseId())
+                .prerequisiteType(CoursePrerequisites.PrerequisteType.GRADE)
+                .minGradeValue(1.7)
+                .groupId(1)
+                .build();
+        coursePrerequisiteJDBCRepository.save(prerequisite);
+
+        registrationService.registerForClass(s2.getStudentId(), offering2.getOfferingId());
+
+        //initial assertions
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering1.getOfferingId())).isFalse();
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering2.getOfferingId())).isFalse();
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering3.getOfferingId())).isFalse();
+
+        //add all offerings to wishlist
+        registrationService.addToWishlist(s.getStudentId(), offering1.getOfferingId());
+        registrationService.addToWishlist(s.getStudentId(), offering2.getOfferingId());
+        registrationService.addToWishlist(s.getStudentId(), offering3.getOfferingId());
+
+        //register all from wishlist
+        var results = registrationService.registerAllFromWishlist(s.getStudentId(), "Fall 2025");
+
+        assertThat(results.size()).isEqualTo(3);
+
+        //all but 1 registration should be successful
+        assertThat(results.stream().filter(BatchRegistrationResult::success).count()).isEqualTo(2);
+        assertThat(results.stream().filter(r -> !r.success()).count()).isEqualTo(1);
 
 
+        //verify enrollments exist for 2 offerings
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering1.getOfferingId())).isTrue();
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering2.getOfferingId())).isTrue();
+
+        assertThat(enrollmentJDBCRepository.getEnrollmentStatusByStudentId(s.getStudentId(), offering1.getOfferingId())).isEqualTo(Enrollment.EnrollmentStatus.ENROLLED);
+        assertThat(enrollmentJDBCRepository.getEnrollmentStatusByStudentId(s.getStudentId(), offering2.getOfferingId())).isEqualTo(Enrollment.EnrollmentStatus.WAITLISTED);
+        assertThat(enrollmentJDBCRepository.getEnrollmentStatusByStudentId(s.getStudentId(), offering3.getOfferingId())).isNull();
+
+        assertThat(enrollmentJDBCRepository.existsByStudentIdAndOfferingId(s.getStudentId(), offering3.getOfferingId())).isFalse();
+
+        assertThatThrownBy(() -> registrationService.registerForClass(s.getStudentId(), offering3.getOfferingId()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("You have not completed all prerequisites for POL-201");
     }
 
     @Test

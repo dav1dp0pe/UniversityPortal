@@ -1,25 +1,57 @@
 ### Registration API Test Requests
 
+###Variables
+@baseUrl = http://localhost:8090/api/registration
+@studentId = 1
+@offeringId = 1
+
 ### 1. Get available course offerings for a semester
-GET http://localhost:8090/api/registration/offerings?semester=Spring%2026&courseCode=CSC
-Authorization: Basic user 69dd5140-0a36-44d7-a7f2-3297830bcd1a
+GET {{baseUrl}}/offerings?semester=Spring%2026&courseCode=CSC
+Authorization: Basic user pass
 Accept: application/json
 
 
-POST http://localhost:8090/api/registration/register
+### 2. Get registered courses for a student
+POST {{baseUrl}}/register
+Authorization: Basic user pass
 Content-Type: application/json
 
 {
-  "studentId": 1,
-  "offeringId": 1
+  "studentId": {{studentId}},
+  "offeringId": {{offeringId}}
 }
 
-### TODO: Test this endpoint
-### Drop a course
-POST http://localhost:8090/api/registration/drop
+### 3. Drop a course
+POST {{baseUrl}}/drop
+Authorization: Basic user pass
 Content-Type: application/json
 
 {
-  "studentId": 1,
-  "offeringId": 1
+  "studentId": {{studentId}},
+  "offeringId": {{offeringId}}
 }
+
+### 4. Add to wishlist
+POST {{baseUrl}}/wishlist/add
+Authorization: Basic user pass
+Content-Type: application/json
+
+{
+  "studentId": {{studentId}},
+  "offeringId": {{offeringId}}
+}
+
+### 5. Remove from wishlist
+DELETE {{baseUrl}}/wishlist/remove
+Authorization: Basic user pass
+Content-Type: application/json
+
+{
+  "studentId": {{studentId}},
+  "offeringId": {{offeringId}}
+}
+
+### 6. Register all from wishlist
+POST {{baseUrl}}/wishlist/register-all?studentId={{studentId}}&term=Fall%2026
+Authorization: Basic user pass
+Content-Type: application/json

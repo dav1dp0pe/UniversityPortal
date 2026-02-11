@@ -1,4 +1,9 @@
 package com.university.UniversityPortal.Controller.dto;
 
-public record EnrollmentResponse(Long enrollmentId, String status, Long studentId, Long offeringId) {
+public record EnrollmentResponse(
+        Long enrollmentId,
+        String status,
+        Long studentId,
+        Long offeringId,
+        java.time.LocalDateTime enrolledAt) {
 }

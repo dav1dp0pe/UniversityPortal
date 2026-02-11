@@ -1,4 +1,4 @@
-package com.university.UniversityPortal.Repository.CourseRepository;
+package com.university.UniversityPortal.Repository.WishlistRepository;
 
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
 import com.university.UniversityPortal.Repository.RowMappers.WishlistRowMapper;
@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class WishlistJDBCRepository {
@@ -35,22 +36,22 @@ public class WishlistJDBCRepository {
         String sql = "SELECT COUNT(*) FROM wishlist";
         return jdbcTemplate.queryForObject(sql, Long.class);
     }
-    public boolean existsByStudentIdAndOfferingId(Long studentId, Long offeringId) {
+
+    public Optional<Wishlist> findByStudentIdAndSemester(Long studentId, String semester) {
         String sql = """
-                SELECT COUNT(*)
+                SELECT wishlist_id, student_id, semester
                 FROM wishlist
-                WHERE student_id = ? AND offering_id = ?
+                WHERE student_id = ? AND semester = ?
                 """;
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, studentId, offeringId);
 
+        List<Wishlist> results = jdbcTemplate.query(sql, rowMapper, studentId, semester);
         //TODO figure out the return type
-        return count != null && count > 0;
+        return results.stream().findFirst();
     }
-
     public Wishlist save(Wishlist item){
         String sql = """
-                INSERT INTO wishlist (student_id, offering_id, added_at)
-                VALUES(?, ?, ?)
+                INSERT INTO wishlist (student_id, semester)
+                VALUES(?, ?)
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -59,8 +60,7 @@ public class WishlistJDBCRepository {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"wishlist_id"});
 
             ps.setLong(1, item.getStudentId());
-            ps.setLong(2, item.getOfferingId());
-            ps.setTimestamp(3, Timestamp.valueOf(item.getAddedAt()));
+            ps.setString(2, item.getSemester());
             return ps;
         }, keyHolder);
 
@@ -80,18 +80,7 @@ public class WishlistJDBCRepository {
         return jdbcTemplate.update(sql, studentId, offeringId); //return number of rows deleted
     }
 
-    public List<Wishlist> findByStudentIdAndTerm(Long studentId, String semester){
-        String sql = """
-                SELECT w.wishlist_id, w.student_id, w.offering_id, w.added_at
-                FROM wishlist w
-                JOIN course_offering co
-                ON w.offering_id = co.offering_id
-                WHERE w.student_id = ?
-                AND co.semester = ?
-                """;
 
-        return jdbcTemplate.query(sql, rowMapper, studentId, semester);
-    }
     /*
     TODO: implement these methods:
     List<Wishlist> findByStudent_StudentId(Long studentId);

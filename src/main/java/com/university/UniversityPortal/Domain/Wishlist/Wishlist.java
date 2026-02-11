@@ -31,6 +31,6 @@ public class Wishlist {
     private Long studentId;
 
     //TODO add offeringId to table
-    private Long offeringId;
-    private LocalDateTime addedAt;
+    private String semester;
+    private List<WishlistItem> items;
 }

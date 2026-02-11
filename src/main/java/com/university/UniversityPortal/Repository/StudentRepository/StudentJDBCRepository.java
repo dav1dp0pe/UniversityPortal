@@ -70,7 +70,7 @@ public class StudentJDBCRepository {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """;
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"student_id"});
@@ -106,12 +106,8 @@ public class StudentJDBCRepository {
             return ps;
         }, keyHolder);
 
-        Number key = null;
-        if (keyHolder.getKeys() != null && keyHolder.getKeys().get("student_id") instanceof Number foundKey) {
-            key = foundKey;
-        } else {
-            key = keyHolder.getKey();
-        }
+        Number key = (Number) keyHolder.getKeys().get("student_id");
+
         if (key != null) {
             student.setStudentId(key.longValue());
         }

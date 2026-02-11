@@ -7,14 +7,17 @@ import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
 import com.university.UniversityPortal.Domain.CourseOffering.CourseOfferingSearchResult;
 import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
 import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
+import com.university.UniversityPortal.Domain.Wishlist.WishlistItem;
 import com.university.UniversityPortal.Repository.CourseRepository.CourseJDBCRepository;
 import com.university.UniversityPortal.Repository.CourseRepository.CourseOfferingJDBCRepository;
 import com.university.UniversityPortal.Repository.CourseRepository.CoursePrerequisiteJDBCRepository;
-import com.university.UniversityPortal.Repository.CourseRepository.WishlistJDBCRepository;
+import com.university.UniversityPortal.Repository.WishlistRepository.WishlistItemJDBCRepository;
+import com.university.UniversityPortal.Repository.WishlistRepository.WishlistJDBCRepository;
 import com.university.UniversityPortal.Repository.EnrollmentRepository.EnrollmentJDBCRepository;
 import com.university.UniversityPortal.Repository.StudentRepository.StudentHoldJDBCRepository;
 import com.university.UniversityPortal.Repository.StudentRepository.StudentJDBCRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -39,16 +42,18 @@ public class RegistrationService {
     private final WishlistJDBCRepository wishlistJDBCRepository;
     private final CourseJDBCRepository courseJDBCRepository;
     private final CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository;
+    private final WishlistItemJDBCRepository wishlistItemJDBCRepository;
 
     //constructor
     public RegistrationService(EnrollmentJDBCRepository enrollmentJDBCRepository,
                                StudentJDBCRepository studentJDBCRepository,
-                               CourseOfferingJDBCRepository courseOfferingJDBCRepository, StudentHoldJDBCRepository studentHoldJDBCRepository, WishlistJDBCRepository wishlistJDBCRepository, CourseJDBCRepository courseJDBCRepository, CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository) {
+                               CourseOfferingJDBCRepository courseOfferingJDBCRepository, StudentHoldJDBCRepository studentHoldJDBCRepository, WishlistJDBCRepository wishlistJDBCRepository, WishlistItemJDBCRepository wishlistItemJDBCRepository, CourseJDBCRepository courseJDBCRepository, CoursePrerequisiteJDBCRepository coursePrerequisiteJDBCRepository) {
         this.enrollmentJDBCRepository = enrollmentJDBCRepository;
         this.studentJDBCRepository = studentJDBCRepository;
         this.courseOfferingJDBCRepository = courseOfferingJDBCRepository;
         this.studentHoldJDBCRepository = studentHoldJDBCRepository;
         this.wishlistJDBCRepository = wishlistJDBCRepository;
+        this.wishlistItemJDBCRepository = wishlistItemJDBCRepository;
         this.courseJDBCRepository = courseJDBCRepository;
         this.coursePrerequisiteJDBCRepository = coursePrerequisiteJDBCRepository;
     }
@@ -63,22 +68,33 @@ public class RegistrationService {
         studentJDBCRepository.findStudentById(studentId).orElseThrow(() -> new RuntimeException("student not found: " + studentId));
 
         //2. load offering
-        courseOfferingJDBCRepository.findByOfferingId(offeringId)
+        CourseOffering offering = courseOfferingJDBCRepository.findByOfferingId(offeringId)
                 .orElseThrow(() -> new RuntimeException("offering not found: " + offeringId));
+
+        if (wishlistItemJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
+            throw new RuntimeException("Offering is already in the student's wishlist.");
+        }
 
         //3. check if that offering is already in wishlist
         //TODO change this to be JDBC instead of JPA
-        if(wishlistJDBCRepository.existsByStudentIdAndOfferingId(studentId, offeringId)) {
-            throw new RuntimeException("student " + studentId + " already has offering " + offeringId + " in wishlist");
-        }
+        String semester = offering.getSemester();
+        Wishlist wishlist = wishlistJDBCRepository.findByStudentIdAndSemester(studentId, semester)
+                .orElseGet(() -> {
+                    Wishlist newWishlist = new Wishlist();
+                    newWishlist.setStudentId(studentId);
+                    newWishlist.setSemester(semester);
+                    return wishlistJDBCRepository.save(newWishlist);
+                });
 
-        //4. create wishlist record
-        Wishlist item = new Wishlist();
-        item.setStudentId(studentId);
+
+        //5. add offering to wishlist
+        WishlistItem item = new WishlistItem();
+        item.setWishlistId(wishlist.getWishlistId());
         item.setOfferingId(offeringId);
         item.setAddedAt(LocalDateTime.now());
+        wishlistItemJDBCRepository.save(item);
 
-        return wishlistJDBCRepository.save(item);
+        return wishlist;
     }
 
     //TODO perform integration test
@@ -86,7 +102,7 @@ public class RegistrationService {
     @Transactional
     public void removeFromWishlist(Long studentId, long offeringId) {
         //find wishlist record
-        int rows = wishlistJDBCRepository.deleteByStudentIdAndOfferingId(studentId, offeringId);
+        int rows = wishlistItemJDBCRepository.deleteByStudentIdAndOfferingId(studentId, offeringId);
 
         if (rows == 0){
             throw new RuntimeException("wishlist item not found for student " + studentId + " and offering " + offeringId);
@@ -98,10 +114,10 @@ public class RegistrationService {
     @Transactional
     public List<BatchRegistrationResult> registerAllFromWishlist(Long studentId, String term) {
 
-        List<Wishlist> wishlistItems = wishlistJDBCRepository.findByStudentIdAndTerm(studentId, term);
+        List<WishlistItem> wishlistItems = wishlistItemJDBCRepository.findByStudentIdAndSemester(studentId, term);
         List<BatchRegistrationResult> results = new ArrayList<>();
 
-        for (Wishlist item : wishlistItems) {
+        for (WishlistItem item : wishlistItems) {
             Long offeringId = item.getOfferingId();
             try {
                 Enrollment enrollment = registerForClass(studentId, offeringId);
@@ -116,7 +132,7 @@ public class RegistrationService {
     //TODO: refactor all instances of enrollment
     //service to register for classes
     //TODO: add checks for unique student IDs, valid course capacity, and prerequisites
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)   //start a new transaction for each registration to ensure independent success/failure
     public Enrollment registerForClass (Long studentId, Long offeringId) {
 
         //1. load student
