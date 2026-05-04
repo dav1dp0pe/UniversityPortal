@@ -57,15 +57,15 @@ public class EnrollmentJDBCRepository {
         }
     }
 
-    public Enum getEnrollmentStatusByStudentId(Long studentId, Long enrollmentId){
+    public EnrollmentStatus getEnrollmentStatusByStudentId(Long studentId, Long offeringId){
         String sql = """
                 SELECT enrollment_status
                 FROM enrollments
                 WHERE student_id = ?
-                AND enrollment_id = ?
+                AND offering_id = ?
                 """;
 
-        List<String> result = jdbcTemplate.queryForList(sql, String.class, studentId, enrollmentId);
+        List<String> result = jdbcTemplate.queryForList(sql, String.class, studentId, offeringId);
         return result.stream().findFirst().map(EnrollmentStatus::valueOf).orElse(null);
     }
 

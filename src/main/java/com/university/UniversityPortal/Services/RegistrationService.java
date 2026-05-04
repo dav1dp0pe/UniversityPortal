@@ -132,7 +132,7 @@ public class RegistrationService {
     //TODO: refactor all instances of enrollment
     //service to register for classes
     //TODO: add checks for unique student IDs, valid course capacity, and prerequisites
-    @Transactional(propagation = Propagation.REQUIRES_NEW)   //start a new transaction for each registration to ensure independent success/failure
+    @Transactional//(propagation = Propagation.REQUIRES_NEW)   //start a new transaction for each registration to ensure independent success/failure
     public Enrollment registerForClass (Long studentId, Long offeringId) {
 
         //1. load student
