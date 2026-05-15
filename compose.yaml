@@ -1,9 +1,10 @@
 services:
   postgres:
-    image: 'postgres:latest'
+    image: postgres:16
+    container_name: UniversityPortal_db
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      POSTGRES_DB: UniversityPortal
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Tanid2715!
     ports:
-      - '5432'
+      - "5432:5432"

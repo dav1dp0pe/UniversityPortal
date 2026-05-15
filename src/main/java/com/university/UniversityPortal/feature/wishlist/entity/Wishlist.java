@@ -1,0 +1,36 @@
+package com.university.UniversityPortal.feature.wishlist.entity;
+
+
+import com.university.UniversityPortal.feature.courseoffering.entity.CourseOffering;
+import com.university.UniversityPortal.feature.student.entity.Student;
+//import jakarta.persistence.*;
+import lombok.Data;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+//@Entity
+@Data
+
+/*@Table(
+        name = "wishlist",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"student_id", "offering_id"})
+        }
+   )
+ */
+//TODO potentially change name to "WishlistItem" to avoid confusion with the entire wishlist
+public class Wishlist {
+
+    //@Id
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long wishlistId;
+
+    //@ManyToOne(optional = false)
+    //@JoinColumn(name = "student_id", nullable = false)
+    private Long studentId;
+
+    //TODO add offeringId to table
+    private Long offeringId;
+    private LocalDateTime addedAt;
+}
