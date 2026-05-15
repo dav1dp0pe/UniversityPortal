@@ -1,33 +1,31 @@
 package com.university.UniversityPortal;
 
-import com.university.UniversityPortal.Controller.dto.BatchRegistrationResult;
-import com.university.UniversityPortal.Domain.Course.Course;
-import com.university.UniversityPortal.Domain.Course.CoursePrerequisites;
-import com.university.UniversityPortal.Domain.CourseOffering.CourseOffering;
-import com.university.UniversityPortal.Domain.Enrollment.Enrollment;
-import com.university.UniversityPortal.Domain.Student.Student;
-import com.university.UniversityPortal.Domain.StudentHold.StudentHold;
-import com.university.UniversityPortal.Domain.Wishlist.Wishlist;
-import com.university.UniversityPortal.Repository.CourseRepository.CourseJDBCRepository;
-import com.university.UniversityPortal.Repository.CourseRepository.CourseOfferingJDBCRepository;
-import com.university.UniversityPortal.Repository.CourseRepository.CoursePrerequisiteJDBCRepository;
-import com.university.UniversityPortal.Repository.CourseRepository.WishlistJDBCRepository;
-import com.university.UniversityPortal.Repository.EnrollmentRepository.EnrollmentJDBCRepository;
-import com.university.UniversityPortal.Repository.StudentRepository.StudentHoldJDBCRepository;
-import com.university.UniversityPortal.Repository.StudentRepository.StudentJDBCRepository;
-import com.university.UniversityPortal.Services.RegistrationService;
+import com.university.UniversityPortal.feature.registration.dto.BatchRegistrationResult;
+import com.university.UniversityPortal.feature.course.entity.Course;
+import com.university.UniversityPortal.feature.course.entity.CoursePrerequisites;
+import com.university.UniversityPortal.feature.courseoffering.entity.CourseOffering;
+import com.university.UniversityPortal.feature.enrollment.entity.Enrollment;
+import com.university.UniversityPortal.feature.student.entity.Student;
+import com.university.UniversityPortal.feature.studenthold.entity.StudentHold;
+import com.university.UniversityPortal.feature.wishlist.entity.Wishlist;
+import com.university.UniversityPortal.feature.course.repository.CourseJDBCRepository;
+import com.university.UniversityPortal.feature.courseoffering.repository.CourseOfferingJDBCRepository;
+import com.university.UniversityPortal.feature.course.repository.CoursePrerequisiteJDBCRepository;
+import com.university.UniversityPortal.feature.wishlist.repository.WishlistJDBCRepository;
+import com.university.UniversityPortal.feature.enrollment.repository.EnrollmentJDBCRepository;
+import com.university.UniversityPortal.feature.studenthold.repository.StudentHoldJDBCRepository;
+import com.university.UniversityPortal.feature.student.repository.StudentJDBCRepository;
+import com.university.UniversityPortal.feature.registration.service.RegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
-import org.springframework.test.context.ActiveProfiles;
-//import org.springframework.test.context.DynamicPropertyRegistry;
-//import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
-//import org.testcontainers.containers.PostgreSQLContainer;
-//import org.testcontainers.junit.jupiter.Container;
-//import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -35,33 +33,19 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
-//@Testcontainers
-
-@ActiveProfiles("test")
+@Testcontainers
 @SpringBootTest
 @Transactional
 public class RegistrationServiceIT {
 
-/*    //TODO: verify username, password, and database name
-      //TODO: readd testcontainers and Postgrescontainer later
+    // @ServiceConnection wires this container directly into Spring Boot's datasource
+    // auto-configuration — reliably overrides application.properties without profile juggling.
+    // static = one container shared across all tests in this class (faster).
     @Container
-    static PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("testuser")
-            .withPassword("testpass");
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16");
 
-    @DynamicPropertySource
-    static void props(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgreSQLContainer::getJdbcUrl);
-        registry.add("spring.datasource.username", postgreSQLContainer::getUsername);
-        registry.add("spring.datasource.password", postgreSQLContainer::getPassword);
 
-        //for tests only
-        registry.add("spring.jpa.hibernate.ddl-auto", () -> "update");
-        registry.add("spring.jpa.show-sql", () -> "true");
-    }
-
-*/
     @Autowired
     JdbcTemplate jdbcTemplate;
     @Autowired
