@@ -7,7 +7,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
+
 import java.util.List;
 
 @Repository
@@ -37,7 +37,7 @@ public class CoursePrerequisiteJDBCRepository {
                 .groupId(rs.getInt("group_id"))
                 .prerequisiteType(CoursePrerequisites.PrerequisteType.valueOf(rs.getString("prerequisite_type")))
                 .requiredCourseId(rs.getLong("required_course_id"))
-                .minGradeValue(rs.getObject("min_grade_value", Double.class))
+                .minGradeValue(rs.getDouble("min_grade_value"))
                 .requiredStanding(rs.getString("required_standing"))
                 .build(), courseId);
     }
@@ -80,7 +80,7 @@ public class CoursePrerequisiteJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"prerequisite_id"});
             ps.setLong(1, prerequisite.getCourseId());
             ps.setInt(2, prerequisite.getGroupId());
             ps.setString(3, prerequisite.getPrerequisiteType().name());

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: UniversityPortal_db
+    container_name: UniversityPortal-db
     environment:
       POSTGRES_DB: UniversityPortal
       POSTGRES_USER: postgres

@@ -7,7 +7,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
+import java.sql.Types;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,13 +67,23 @@ public class CourseOfferingJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    PreparedStatement ps = connection.prepareStatement(sql, new String[]{"offering_id"});
 
                     ps.setLong(1, courseOffering.getCourseId());
                     ps.setString(2, courseOffering.getSemester());
                     ps.setString(3, courseOffering.getInstructor());
-                    ps.setString(4, courseOffering.getStartTime());
-                    ps.setString(5, courseOffering.getEndTime());
+                    // TIME columns must use setNull(Types.TIME) or setObject(LocalTime) — setString sends
+                    // VARCHAR type which Postgres rejects even for null values
+                    if (courseOffering.getStartTime() != null) {
+                        ps.setObject(4, LocalTime.parse(courseOffering.getStartTime()));
+                    } else {
+                        ps.setNull(4, Types.TIME);
+                    }
+                    if (courseOffering.getEndTime() != null) {
+                        ps.setObject(5, LocalTime.parse(courseOffering.getEndTime()));
+                    } else {
+                        ps.setNull(5, Types.TIME);
+                    }
                     ps.setString(6, courseOffering.getDaysTaught());
                     ps.setString(7, courseOffering.getDateRange());
                     ps.setString(8, courseOffering.getDelivery());
@@ -121,10 +132,10 @@ public class CourseOfferingJDBCRepository {
                 courseOffering.getDaysTaught(),
                 courseOffering.getDateRange(),
                 courseOffering.getDelivery(),
-                courseOffering.getLocation());
-                courseOffering.getSeatCapacity();
-                courseOffering.getEnrolled();
-                courseOffering.getSection();
-                courseOffering.getOfferingId();
+                courseOffering.getLocation(),
+                courseOffering.getSeatCapacity(),
+                courseOffering.getEnrolled(),
+                courseOffering.getSection(),
+                courseOffering.getOfferingId());
     }
 }

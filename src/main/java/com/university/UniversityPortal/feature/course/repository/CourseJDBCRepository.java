@@ -7,7 +7,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.PreparedStatement;
-import java.sql.Statement;
+
 import java.util.List;
 
 @Repository
@@ -62,7 +62,7 @@ public class CourseJDBCRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = connection.prepareStatement(sql, new String[]{"course_id"});
             ps.setString(1, course.getCourseName());
             ps.setString(2, course.getCourseCode());
             ps.setInt(3, course.getCreditHours());
